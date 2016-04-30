@@ -1,0 +1,8 @@
+[package]
+name = "symbol-table"
+version = "0.1.0"
+authors = ["Stu Black <trurl@freeshell.org>"]
+
+# [dependencies]
+# generic-array = "0.2.*"
+# typenum = "1.3.*"
