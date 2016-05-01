@@ -1,3 +1,5 @@
+//! Indexing on top of a `Table`.
+
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::collections::HashMap;
 use std::default::Default;
@@ -130,30 +132,19 @@ pub trait Indexing: Default {
 
     /// Looks up `data` in the index. Returns `Some(symbol)` if a symbol is
     /// present, else `None`.
-    ///
-    /// This method is unsafe because it may choose to dereference a raw pointer
-    /// into a `Table<Self::Data>`. Callers should ensure that any such
-    /// references are valid.
     fn get(&self, data: &Self::Data) -> Option<&Symbol<Self::Data>>;
 
     /// Looks up `data` in the index, inserting it into the index and `table` if
     /// it isn't present. Returns the resulting `Symbol<T>` wrapped in an
     /// `Insertion` that indicates whether a new table entry had to be created.
-    ///
-    /// This method is unsafe because it may choose to dereference a raw pointer
-    /// into a `Table<Self::Data>`. Callers should ensure that any such
-    /// references are valid.
     fn get_or_insert<'s>(&'s mut self, data: Self::Data) -> Insertion<'s, Self::Data>;
 
     /// Looks up the symbol with id `i` in the index. Returns `Some(symbol)` if
     /// a symbol is present, else `None`.
-    ///
-    /// This method is unsafe because it may choose to dereference a raw pointer
-    /// into a `Table<Self::Data>`. Callers should ensure that any such
-    /// references are valid.
     fn get_symbol<'s>(&'s self, id: &SymbolId) -> Option<&'s Symbol<Self::Data>>;
 }
 
+/// HashMap-backed table indexing.
 pub struct HashIndexing<T> where T: Eq + Hash {
     table: Table<T>,
     by_symbol: HashMap<Ref<T>, Ref<Symbol<T>>>,
@@ -222,66 +213,6 @@ impl<T> Indexing for HashIndexing<T> where T: Eq + Hash {
         self.by_id.get(id.as_usize()).map(|x| unsafe { x.deref() })
     }
 }
-
-// /// BTreeMap-based indexing for a `Table` that has been borrowed for the
-// /// lifetime `'a`.
-// pub struct BTreeIndexing<'a, T> where T: 'a + Eq + Ord {
-//     lifetime: PhantomData<&'a ()>,
-//     by_symbol: BTreeMap<Ref<T>, Ref<Symbol<T>>>,
-//     by_id: Vec<Ref<Symbol<T>>>,
-// }
-
-// impl<'a, T> Indexing<'a> for BTreeIndexing<'a, T> where T: 'a + Eq + Ord {
-//     type Data = T;
-
-//     fn from_table(table: &'a Table<T>) -> Self {
-//         let mut by_symbol = BTreeMap::new();
-//         let mut by_id =
-//             match table.iter().next() {
-//                 Some(symbol) => vec![Ref::new(symbol); table.len()],
-//                 None => Vec::new(),
-//             };
-//         for symbol in table.iter() {
-//             by_symbol.insert(Ref::new(symbol.data()), Ref::new(symbol));
-//             by_id[symbol.id().as_usize()] = Ref::new(symbol);
-//         }
-//         BTreeIndexing {
-//             lifetime: PhantomData,
-//             by_symbol: by_symbol,
-//             by_id: by_id,
-//         }
-//     }
-
-//     unsafe fn get(&self, data: &T) -> Option<&'a Symbol<T>> {
-//         self.by_symbol.get(&Ref::new(data)).map(|x| x.deref())
-//     }
-
-//     unsafe fn get_or_insert(&mut self, table: &'a mut Table<T>, data: T) -> Insertion<'a, T> {
-//         use std::collections::btree_map::Entry;
-//         if let Entry::Occupied(e) = self.by_symbol.entry(Ref::new(&data)) {
-//             // Unsafe call to Ref::deref(): should be fine as long as caller
-//             // respects integrity of underlying table.
-//             return Insertion::Present(e.get().deref())
-//         }
-//         // TODO: when the BTreeMap API gets revised, we may be able to do this
-//         // without a second hashtable lookup.
-//         let symbol = table.insert(data);
-//         // The Ref that gets inserted has to be backed by data in the table, not
-//         // data on the stack (which is how we did the previous lookup).
-//         self.by_symbol.insert(Ref::new(symbol.data()), Ref::new(symbol));
-//         self.by_id.push(Ref::new(symbol));
-//         Insertion::New(symbol)
-//     }
-
-//     unsafe fn get_symbol(&self, id: &SymbolId) -> Option<&'a Symbol<T>> {
-//         self.by_id.get(id.as_usize()).map(|x| x.deref())
-//     }
-
-//     fn clear(&mut self) {
-//         self.by_symbol.clear();
-//         self.by_id.clear();
-//     }
-// }
 
 #[cfg(test)]
 mod test {
@@ -463,7 +394,7 @@ mod test {
     }
 
     #[test]
-    fn send_to_thread_unsafe_ok() {
+    fn sync_to_thread_ok() {
         use std::mem;
         use std::thread;
 
@@ -472,29 +403,29 @@ mod test {
             t.insert(*v);
         }
         let index = HashIndexing::from_table(t);
-        // I totally promise not to use this after the function exits. Swear on
-        // it, cross my heart, etc.
+        // I totally promise not to use this (or any references obtained through
+        // it) after the function exits. Swear on it, cross my heart, etc.
         let fake_static_index: &'static HashIndexing<usize> = unsafe { mem::transmute(&index) };
         let id1 = index.get(&VALUES[0]).unwrap().id();
         let id2 = index.get(&VALUES[1]).unwrap().id();
         let t1 = 
-            thread::spawn(move || fake_static_index.get_symbol(&id1).map(|x| (*x.data(), x.id())));
+            thread::spawn(move || fake_static_index.get_symbol(&id1).map(|x| (x.data(), x.id())));
         let t2 =
-            thread::spawn(move || fake_static_index.get_symbol(&id2).map(|x| (*x.data(), x.id())));
+            thread::spawn(move || fake_static_index.get_symbol(&id2).map(|x| (x.data(), x.id())));
         let v1 = index.get(&VALUES[0]).unwrap();
         let v2 = index.get(&VALUES[1]).unwrap();
 
         match t1.join() {
             Ok(Some((data, id))) => {
                 assert_eq!(id, v1.id());
-                assert_eq!(data, *v1.data());
+                assert_eq!(data, v1.data());
             },
             _ => panic!(),
         }
         match t2.join() {
             Ok(Some((data, id))) => {
                 assert_eq!(id, v2.id());
-                assert_eq!(data, *v2.data());
+                assert_eq!(data, v2.data());
             },
             _ => panic!(),
         }

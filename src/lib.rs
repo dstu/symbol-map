@@ -1,3 +1,5 @@
+//! Provides fast mapping of arbitrary values to whole-number identifiers.
+
 pub mod indexing;
 mod table;  // Not pub because all pub symbols re-exported.
 
