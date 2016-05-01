@@ -8,12 +8,23 @@ use std::hash::{Hash, Hasher};
 
 use super::{Symbol, SymbolId, Table};
 
-/// Indicates whether a symbol lookup had to create a new table entry.
-pub enum Insertion<'a, T, D> where T: 'a, D: 'a + SymbolId {
-    /// Symbol was already present in table.
-    Present(&'a Symbol<T, D>),
-    /// Symbol was not present in table, and a new entry was created for it.
-    New(&'a Symbol<T, D>),
+/// Indicates whether the result of a symbol lookup had to create a new table
+/// entry.
+pub enum Insertion<T>  {
+    /// Result came from item that was already present in table.
+    Present(T),
+    /// Result came from item that was not present in table, and a new entry was
+    /// created as a side effect.
+    New(T),
+}
+
+impl<T> Insertion<T> {
+    pub fn map<F, X>(&self, f: F) -> Insertion<X> where F: FnOnce(&T) -> X {
+        match self {
+            &Insertion::Present(ref s) => Insertion::Present(f(s)),
+            &Insertion::New(ref s) => Insertion::New(f(s)),
+        }
+    }
 }
 
 /// Wrapper for a raw pointer which lets us treat it like a reference.
@@ -140,7 +151,8 @@ pub trait Indexing: Default {
     /// Looks up `data` in the index, inserting it into the index and `table` if
     /// it isn't present. Returns the resulting `Symbol<T>` wrapped in an
     /// `Insertion` that indicates whether a new table entry had to be created.
-    fn get_or_insert<'s>(&'s mut self, data: Self::Data) -> Insertion<'s, Self::Data, Self::Id>;
+    fn get_or_insert<'s>(&'s mut self, data: Self::Data)
+                         -> Insertion<&'s Symbol<Self::Data, Self::Id>>;
 
     /// Looks up the symbol with id `i` in the index. Returns `Some(symbol)` if
     /// a symbol is present, else `None`.
@@ -196,7 +208,7 @@ impl<T, D> Indexing for HashIndexing<T, D> where T: Eq + Hash, D: SymbolId {
         self.by_symbol.get(&Ref::new(data)).map(|x| unsafe { x.deref() })
     }
 
-    fn get_or_insert<'s>(&'s mut self, data: T) -> Insertion<'s, T, D> {
+    fn get_or_insert<'s>(&'s mut self, data: T) -> Insertion<&'s Symbol<T, D>> {
         use std::collections::hash_map::Entry;
         if let Entry::Occupied(e) = self.by_symbol.entry(Ref::new(&data)) {
             // Unsafe call to Ref::deref(): should be fine as because we own
