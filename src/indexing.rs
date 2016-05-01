@@ -1,21 +1,45 @@
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
+use std::default::Default;
 use std::fmt;
-use std::mem;
 use std::hash::{Hash, Hasher};
-use std::marker::PhantomData;
 
-use super::{Insertion, Symbol, SymbolId, Table};
+use super::{Symbol, SymbolId, Table};
 
-/// Wrapper for a raw pointer which lets us treat it like a reference. No safety
-/// checks or lifetimes protect this reference, so a `Ref<T>` may be invalidated
-/// without warning.
+/// Indicates whether a symbol lookup had to create a new table entry.
+pub enum Insertion<'a, T> where T: 'a {
+    /// Symbol was already present in table.
+    Present(&'a Symbol<T>),
+    /// Symbol was not present in table, and a new entry was created for it.
+    New(&'a Symbol<T>),
+}
+
+/// Wrapper for a raw pointer which lets us treat it like a reference.
 ///
-/// Note that the impls for `Debug`, `Eq`, `Hash`, `Ord`, `PartialEq`, and
-/// `PartialOrd` all dereference the raw pointer that this structure wraps. As a
-/// result, a `Ref<T>` must be removed from any data structures that make use of
-/// any of those interfaces *before* it is invalidated.
+/// You are strongly discouraged from exposing this type directly in your data
+/// structures. This type is essentially a giant footgun. In particular:
+///
+/// - No safety checks or lifetimes protect this reference, so a `Ref<T>` may be
+/// invalidated without warning. (You may use a `Ref<T>` safely by ensuring that
+/// the references passed to `Ref<T>::new()` will never be dropped before the
+/// wrappers. A good example of when you'd be able to do this is in in a struct
+/// that has `Ref<T>` references into a data structure that it also owns.)
+///
+/// - The impls for `Debug`, `Eq`, `Hash`, `Ord`, `PartialEq`, and `PartialOrd`
+/// all dereference the raw pointer that this structure wraps. As a result, a
+/// `Ref<T>` must be removed from any data structures that make use of any of
+/// those interfaces *before* it is invalidated.
+///
+/// - `Ref<T>` wraps a value of type `*const T`, which is not usually `Send` or
+/// `Sync`. This restriction is overridden for a `Ref<T>` wrapper so that data
+/// structures which encapsulate it may themselves be `Send` or `Sync`. This
+/// makes it the responsibility of data structures using such wrappers to
+/// satisfy the contracts of those types.
 pub struct Ref<T> { ptr: *const T, }
+
+unsafe impl<T> Send for Ref<T> where T: Send { }
+
+unsafe impl<T> Sync for Ref<T> where T: Sync { }
 
 impl<T> Ref<T> {
     /// Casts `data` to `*const T` and retains the pointer for dereferencing at
@@ -79,24 +103,30 @@ impl<T> PartialOrd for Ref<T> where T: PartialOrd {
     }
 }
 
-/// Interface for indexing a `Table`.
+/// Provides indexing for a `Table`, so that its elements may be retrieved
+/// efficiently. Most table lookups should go through an implementation of this
+/// trait structure instead of a `Table` directly.
 ///
-/// This trait is publicly exposed for extensibility. Realistically speaking,
-/// however, you should probably just use `HashIndexing`.
-pub trait IndexingMethod<'a>: Sized {
+/// An `Indexing` should own an underlying `Table<Indexing::Data>`. This table
+/// provides persistent storage for `Symbol<Indexing::Data>`s, which associate
+/// instances of `Data` with a `SymbolId`.
+///
+/// This trait is provided for extensibility. Realistically speaking, however,
+/// you should probably just use `HashIndexing`.
+pub trait Indexing: Default {
     /// The type `T` of a `Table<T>`.
-    type Data: 'a;
+    type Data;
 
     /// Returns a new indexing method that has already indexed the contents of
     /// `table`.
-    fn from_table(table: &'a Table<Self::Data>) -> Self;
+    fn from_table(table: Table<Self::Data>) -> Self;
 
-    /// Overwrites current index with a new index for `table`.
-    fn index(&mut self, table: &'a Table<Self::Data>) {
-        self.clear();
-        let mut new_table = Self::from_table(table);
-        mem::swap(self, &mut new_table);
-    }
+    /// Returns a read-only view of the underlying table.
+    fn table(&self) -> &Table<Self::Data>;
+
+    /// Extracts the underlying table from the index, discarding all pointers
+    /// into the table.
+    fn to_table(self) -> Table<Self::Data>;
 
     /// Looks up `data` in the index. Returns `Some(symbol)` if a symbol is
     /// present, else `None`.
@@ -104,7 +134,7 @@ pub trait IndexingMethod<'a>: Sized {
     /// This method is unsafe because it may choose to dereference a raw pointer
     /// into a `Table<Self::Data>`. Callers should ensure that any such
     /// references are valid.
-    unsafe fn get(&self, data: &Self::Data) -> Option<&'a Symbol<Self::Data>>;
+    fn get(&self, data: &Self::Data) -> Option<&Symbol<Self::Data>>;
 
     /// Looks up `data` in the index, inserting it into the index and `table` if
     /// it isn't present. Returns the resulting `Symbol<T>` wrapped in an
@@ -113,8 +143,7 @@ pub trait IndexingMethod<'a>: Sized {
     /// This method is unsafe because it may choose to dereference a raw pointer
     /// into a `Table<Self::Data>`. Callers should ensure that any such
     /// references are valid.
-    unsafe fn get_or_insert(&mut self, table: &'a mut Table<Self::Data>, data: Self::Data)
-                            -> Insertion<'a, Self::Data>;
+    fn get_or_insert<'s>(&'s mut self, data: Self::Data) -> Insertion<'s, Self::Data>;
 
     /// Looks up the symbol with id `i` in the index. Returns `Some(symbol)` if
     /// a symbol is present, else `None`.
@@ -122,24 +151,29 @@ pub trait IndexingMethod<'a>: Sized {
     /// This method is unsafe because it may choose to dereference a raw pointer
     /// into a `Table<Self::Data>`. Callers should ensure that any such
     /// references are valid.
-    unsafe fn get_symbol<'s>(&'s self, id: &SymbolId) -> Option<&'a Symbol<Self::Data>>;
-
-    /// Clears all indexed content.
-    fn clear(&mut self);
+    fn get_symbol<'s>(&'s self, id: &SymbolId) -> Option<&'s Symbol<Self::Data>>;
 }
 
-/// HashMap-based indexing for a `Table` that has been borrowed for the lifetime
-/// `'a`.
-pub struct HashIndexing<'a, T> where T: 'a + Eq + Hash {
-    lifetime: PhantomData<&'a ()>,
+pub struct HashIndexing<T> where T: Eq + Hash {
+    table: Table<T>,
     by_symbol: HashMap<Ref<T>, Ref<Symbol<T>>>,
     by_id: Vec<Ref<Symbol<T>>>,
 }
 
-impl<'a, T> IndexingMethod<'a> for HashIndexing<'a, T> where T: 'a + Eq + Hash {
+impl<T> Default for HashIndexing<T> where T: Eq + Hash {
+    fn default() -> Self {
+        HashIndexing {
+            table: Table::new(),
+            by_symbol: HashMap::new(),
+            by_id: Vec::new(),
+        }
+    }
+}
+
+impl<T> Indexing for HashIndexing<T> where T: Eq + Hash {
     type Data = T;
 
-    fn from_table(table: &'a Table<T>) -> Self {
+    fn from_table(table: Table<T>) -> Self {
         let mut by_symbol = HashMap::with_capacity(table.len());
         let mut by_id =
             match table.iter().next() {
@@ -151,26 +185,32 @@ impl<'a, T> IndexingMethod<'a> for HashIndexing<'a, T> where T: 'a + Eq + Hash {
             by_id[symbol.id().as_usize()] = Ref::new(symbol);
         }
         HashIndexing {
-            lifetime: PhantomData,
+            table: table,
             by_symbol: by_symbol,
             by_id: by_id,
         }
     }
 
-    unsafe fn get(&self, data: &T) -> Option<&'a Symbol<T>> {
-        self.by_symbol.get(&Ref::new(data)).map(|x| x.deref())
+    fn table(&self) -> &Table<Self::Data> { &self.table }
+
+    fn to_table(self) -> Table<Self::Data> { self.table }
+
+    fn get<'s>(&'s self, data: &T) -> Option<&'s Symbol<T>> {
+        // Unsafe call to Ref::deref(): should be fine as because we own
+        // self.table and the ref refers into that.
+        self.by_symbol.get(&Ref::new(data)).map(|x| unsafe { x.deref() })
     }
 
-    unsafe fn get_or_insert(&mut self, table: &'a mut Table<T>, data: T) -> Insertion<'a, T> {
+    fn get_or_insert<'s>(&'s mut self, data: T) -> Insertion<'s, T> {
         use std::collections::hash_map::Entry;
         if let Entry::Occupied(e) = self.by_symbol.entry(Ref::new(&data)) {
-            // Unsafe call to Ref::deref(): should be fine as long as caller
-            // respects integrity of underlying table.
-            return Insertion::Present(e.get().deref())
+            // Unsafe call to Ref::deref(): should be fine as because we own
+            // self.table and the ref refers into that.
+            return Insertion::Present(unsafe { e.get().deref() })
         }
         // TODO: when the HashMap API gets revised, we may be able to do this
         // without a second hashtable lookup.
-        let symbol = table.insert(data);
+        let symbol = self.table.insert(data);
         // The Ref that gets inserted has to be backed by data in the table, not
         // data on the stack (which is how we did the previous lookup).
         self.by_symbol.insert(Ref::new(symbol.data()), Ref::new(symbol));
@@ -178,80 +218,75 @@ impl<'a, T> IndexingMethod<'a> for HashIndexing<'a, T> where T: 'a + Eq + Hash {
         Insertion::New(symbol)
     }
 
-    unsafe fn get_symbol(&self, id: &SymbolId) -> Option<&'a Symbol<T>> {
-        self.by_id.get(id.as_usize()).map(|x| x.deref())
-    }
-
-    fn clear(&mut self) {
-        self.by_symbol.clear();
-        self.by_id.clear();
+    fn get_symbol<'s>(&'s self, id: &SymbolId) -> Option<&'s Symbol<T>> {
+        self.by_id.get(id.as_usize()).map(|x| unsafe { x.deref() })
     }
 }
 
-/// BTreeMap-based indexing for a `Table` that has been borrowed for the
-/// lifetime `'a`.
-pub struct BTreeIndexing<'a, T> where T: 'a + Eq + Ord {
-    lifetime: PhantomData<&'a ()>,
-    by_symbol: BTreeMap<Ref<T>, Ref<Symbol<T>>>,
-    by_id: Vec<Ref<Symbol<T>>>,
-}
+// /// BTreeMap-based indexing for a `Table` that has been borrowed for the
+// /// lifetime `'a`.
+// pub struct BTreeIndexing<'a, T> where T: 'a + Eq + Ord {
+//     lifetime: PhantomData<&'a ()>,
+//     by_symbol: BTreeMap<Ref<T>, Ref<Symbol<T>>>,
+//     by_id: Vec<Ref<Symbol<T>>>,
+// }
 
-impl<'a, T> IndexingMethod<'a> for BTreeIndexing<'a, T> where T: 'a + Eq + Ord {
-    type Data = T;
+// impl<'a, T> Indexing<'a> for BTreeIndexing<'a, T> where T: 'a + Eq + Ord {
+//     type Data = T;
 
-    fn from_table(table: &'a Table<T>) -> Self {
-        let mut by_symbol = BTreeMap::new();
-        let mut by_id =
-            match table.iter().next() {
-                Some(symbol) => vec![Ref::new(symbol); table.len()],
-                None => Vec::new(),
-            };
-        for symbol in table.iter() {
-            by_symbol.insert(Ref::new(symbol.data()), Ref::new(symbol));
-            by_id[symbol.id().as_usize()] = Ref::new(symbol);
-        }
-        BTreeIndexing {
-            lifetime: PhantomData,
-            by_symbol: by_symbol,
-            by_id: by_id,
-        }
-    }
+//     fn from_table(table: &'a Table<T>) -> Self {
+//         let mut by_symbol = BTreeMap::new();
+//         let mut by_id =
+//             match table.iter().next() {
+//                 Some(symbol) => vec![Ref::new(symbol); table.len()],
+//                 None => Vec::new(),
+//             };
+//         for symbol in table.iter() {
+//             by_symbol.insert(Ref::new(symbol.data()), Ref::new(symbol));
+//             by_id[symbol.id().as_usize()] = Ref::new(symbol);
+//         }
+//         BTreeIndexing {
+//             lifetime: PhantomData,
+//             by_symbol: by_symbol,
+//             by_id: by_id,
+//         }
+//     }
 
-    unsafe fn get(&self, data: &T) -> Option<&'a Symbol<T>> {
-        self.by_symbol.get(&Ref::new(data)).map(|x| x.deref())
-    }
+//     unsafe fn get(&self, data: &T) -> Option<&'a Symbol<T>> {
+//         self.by_symbol.get(&Ref::new(data)).map(|x| x.deref())
+//     }
 
-    unsafe fn get_or_insert(&mut self, table: &'a mut Table<T>, data: T) -> Insertion<'a, T> {
-        use std::collections::btree_map::Entry;
-        if let Entry::Occupied(e) = self.by_symbol.entry(Ref::new(&data)) {
-            // Unsafe call to Ref::deref(): should be fine as long as caller
-            // respects integrity of underlying table.
-            return Insertion::Present(e.get().deref())
-        }
-        // TODO: when the BTreeMap API gets revised, we may be able to do this
-        // without a second hashtable lookup.
-        let symbol = table.insert(data);
-        // The Ref that gets inserted has to be backed by data in the table, not
-        // data on the stack (which is how we did the previous lookup).
-        self.by_symbol.insert(Ref::new(symbol.data()), Ref::new(symbol));
-        self.by_id.push(Ref::new(symbol));
-        Insertion::New(symbol)
-    }
+//     unsafe fn get_or_insert(&mut self, table: &'a mut Table<T>, data: T) -> Insertion<'a, T> {
+//         use std::collections::btree_map::Entry;
+//         if let Entry::Occupied(e) = self.by_symbol.entry(Ref::new(&data)) {
+//             // Unsafe call to Ref::deref(): should be fine as long as caller
+//             // respects integrity of underlying table.
+//             return Insertion::Present(e.get().deref())
+//         }
+//         // TODO: when the BTreeMap API gets revised, we may be able to do this
+//         // without a second hashtable lookup.
+//         let symbol = table.insert(data);
+//         // The Ref that gets inserted has to be backed by data in the table, not
+//         // data on the stack (which is how we did the previous lookup).
+//         self.by_symbol.insert(Ref::new(symbol.data()), Ref::new(symbol));
+//         self.by_id.push(Ref::new(symbol));
+//         Insertion::New(symbol)
+//     }
 
-    unsafe fn get_symbol(&self, id: &SymbolId) -> Option<&'a Symbol<T>> {
-        self.by_id.get(id.as_usize()).map(|x| x.deref())
-    }
+//     unsafe fn get_symbol(&self, id: &SymbolId) -> Option<&'a Symbol<T>> {
+//         self.by_id.get(id.as_usize()).map(|x| x.deref())
+//     }
 
-    fn clear(&mut self) {
-        self.by_symbol.clear();
-        self.by_id.clear();
-    }
-}
+//     fn clear(&mut self) {
+//         self.by_symbol.clear();
+//         self.by_id.clear();
+//     }
+// }
 
 #[cfg(test)]
 mod test {
-    use super::{HashIndexing, IndexingMethod, Ref};
-    use ::Table;
+    use super::{HashIndexing, Indexing, Insertion, Ref};
+    use ::{SymbolId, Table};
 
     use std::cmp::Ordering;
     use std::hash::{Hash, Hasher, SipHasher};
@@ -316,31 +351,153 @@ mod test {
     }
 
     #[test]
-    fn hash_index_empty_ok() {
+    fn hash_indexing_empty_ok() {
         let t = Table::<usize>::new();
         assert_eq!(t.len(), 0);
-        let i = HashIndexing::from_table(&t);
+        let i = HashIndexing::from_table(t);
         assert!(i.by_symbol.is_empty());
         assert!(i.by_id.is_empty());
     }
 
     #[test]
-    fn hash_index_from_table_ok() {
+    fn hash_indexing_from_table_ok() {
+        let mut t = Table::<usize>::new();
+        for v in VALUES.iter() {
+            t.insert(*v);
+        }
+        let expected_len = t.len();
+        let expected_values: Vec<(usize, SymbolId)> =
+            t.iter().map(|s| (*s.data(), s.id())).collect();
+
+        let i = HashIndexing::from_table(t);
+        assert_eq!(i.by_symbol.len(), expected_len);
+        assert_eq!(i.by_id.len(), expected_len);
+        for (data, id) in expected_values.into_iter() {
+            let data_ref = Ref::new(&data);
+            unsafe {
+                assert_eq!(i.by_symbol.get(&data_ref).unwrap().deref().data(), &data);
+                assert_eq!(i.by_symbol.get(&data_ref).unwrap().deref().id(), id);
+                assert_eq!(i.by_id[id.as_usize()].deref().data(), &data);
+            }
+        }
+    }
+
+    #[test]
+    fn hash_indexing_empty_insertion_ok() {
+        let mut i = HashIndexing::default();
+
+        for v in VALUES.iter() {
+            assert!(i.get(v).is_none());
+            let id = match i.get_or_insert(*v) {
+                Insertion::Present(_) => panic!(),
+                Insertion::New(symbol) => {
+                    assert_eq!(symbol.data(), v);
+                    symbol.id()
+                },
+            };
+            assert_eq!(i.get_symbol(&id).unwrap().data(), v);
+        }
+    }
+
+    
+    #[test]
+    fn indexed_present_ok() {
         let mut t = Table::<usize>::new();
         for v in VALUES.iter() {
             t.insert(*v);
         }
 
-        let i = HashIndexing::from_table(&t);
-        assert_eq!(i.by_symbol.len(), t.len());
-        assert_eq!(i.by_id.len(), t.len());
-        for symbol in t.iter() {
-            let data_ref = Ref::new(symbol.data());
-            unsafe {
-                assert_eq!(i.by_symbol.get(&data_ref).unwrap().deref().data(), symbol.data());
-                assert_eq!(i.by_symbol.get(&data_ref).unwrap().deref().id(), symbol.id());
-                assert_eq!(i.by_id[symbol.id().as_usize()].deref().data(), symbol.data());
+        let mut i = HashIndexing::from_table(t);
+        for v in VALUES.iter() {
+            assert_eq!(i.get(v).unwrap().data(), v);
+            let id = match i.get_or_insert(*v) {
+                Insertion::New(_) => panic!(),
+                Insertion::Present(symbol) => {
+                    assert_eq!(symbol.data(), v);
+                    symbol.id()
+                },
+            };
+            assert_eq!(i.get_symbol(&id).unwrap().data(), v);
+        }
+    }
+
+    #[test]
+    fn send_to_thread_safe_ok() {
+        use std::sync::Arc;
+        use std::thread;
+
+        let mut t = Table::<usize>::new();
+        for v in VALUES.iter() {
+            t.insert(*v);
+        }
+        let index = Arc::new(HashIndexing::from_table(t));
+        {
+            let id1 = index.get(&VALUES[0]).unwrap().id();
+            let id2 = index.get(&VALUES[1]).unwrap().id();
+            let t1 = {
+                let index = index.clone();
+                thread::spawn(move || index.get_symbol(&id1).map(|x| (*x.data(), x.id())))
+            };
+            let t2 = {
+                let index = index.clone();
+                thread::spawn(move || index.get_symbol(&id2).map(|x| (*x.data(), x.id())))
+            };
+            let v1 = index.get(&VALUES[0]).unwrap();
+            let v2 = index.get(&VALUES[1]).unwrap();
+
+            match t1.join() {
+                Ok(Some((data, id))) => {
+                    assert_eq!(id, v1.id());
+                    assert_eq!(data, *v1.data());
+                },
+                _ => panic!(),
+            }
+            match t2.join() {
+                Ok(Some((data, id))) => {
+                    assert_eq!(id, v2.id());
+                    assert_eq!(data, *v2.data());
+                },
+                _ => panic!(),
             }
         }
+    }
+
+    #[test]
+    fn send_to_thread_unsafe_ok() {
+        use std::mem;
+        use std::thread;
+
+        let mut t = Table::<usize>::new();
+        for v in VALUES.iter() {
+            t.insert(*v);
+        }
+        let index = HashIndexing::from_table(t);
+        // I totally promise not to use this after the function exits. Swear on
+        // it, cross my heart, etc.
+        let fake_static_index: &'static HashIndexing<usize> = unsafe { mem::transmute(&index) };
+        let id1 = index.get(&VALUES[0]).unwrap().id();
+        let id2 = index.get(&VALUES[1]).unwrap().id();
+        let t1 = 
+            thread::spawn(move || fake_static_index.get_symbol(&id1).map(|x| (*x.data(), x.id())));
+        let t2 =
+            thread::spawn(move || fake_static_index.get_symbol(&id2).map(|x| (*x.data(), x.id())));
+        let v1 = index.get(&VALUES[0]).unwrap();
+        let v2 = index.get(&VALUES[1]).unwrap();
+
+        match t1.join() {
+            Ok(Some((data, id))) => {
+                assert_eq!(id, v1.id());
+                assert_eq!(data, *v1.data());
+            },
+            _ => panic!(),
+        }
+        match t2.join() {
+            Ok(Some((data, id))) => {
+                assert_eq!(id, v2.id());
+                assert_eq!(data, *v2.data());
+            },
+            _ => panic!(),
+        }
+
     }
 }
