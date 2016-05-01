@@ -207,3 +207,115 @@ impl<'a, T> Iterator for TableIter<'a, T> where T: 'a {
         (self.remaining, Some(self.remaining))
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::{Symbol, SymbolId, Table};
+
+    use std::default::Default;
+
+    const VALUES: &'static [usize] = &[101, 203, 500, 30, 0, 1];
+
+    #[test]
+    fn symbol_id_ok() {
+        let id = SymbolId::default();
+        assert_eq!(id.as_usize(), 0);
+        assert_eq!(id.next().as_usize(), 1);
+        assert_eq!(id.next().next().as_usize(), 2);
+        assert_eq!(id.as_usize(), 0);
+        assert_eq!(id, SymbolId::default());
+    }
+
+    #[test]
+    fn new_table_empty_ok() {
+        let t = Table::<usize>::new();
+        assert!(t.head.is_none());
+        assert!(t.next_id == SymbolId::default());
+        assert_eq!(t.len(), 0);
+    }
+
+    #[test]
+    fn table_insert_ok() {
+        let mut t = Table::<usize>::new();
+        for (i, v) in VALUES.iter().enumerate() {
+            t.insert(*v);
+            assert_eq!(t.len(), i + 1);
+            assert_eq!(t.next_id.as_usize(), i + 1);
+            assert_eq!(t.head.as_ref().map(|x| x.data), Some(*v));
+        }
+        assert_eq!(t.len(), VALUES.len());
+        assert_eq!(t.next_id.as_usize(), VALUES.len());
+
+        let mut x = t.head.as_ref();
+        let mut count = 0;
+        let mut vs = VALUES.iter().rev().enumerate();
+        loop {
+            x = match x {
+                None => break,
+                Some(symbol) => {
+                    let (i, v) = vs.next().unwrap();
+                    assert_eq!(i, count);
+                    assert_eq!(symbol.data(), v);
+                    count += 1;
+                    symbol.next.as_ref()
+                },
+            }
+        }
+        assert_eq!(vs.next(), None);
+    }
+
+    #[test]
+    fn table_empty_iter_ok() {
+        let t = Table::<usize>::new();
+        let mut i = t.iter();
+        assert_eq!(i.size_hint(), (0, Some(0)));
+        assert!(i.next().is_none());
+        assert_eq!(i.size_hint(), (0, Some(0)));
+    }
+
+    #[test]
+    fn table_iter_ok() {
+        let mut t = Table::<usize>::new();
+        for v in VALUES.iter() {
+            t.insert(*v);
+        }
+        assert_eq!(t.len(), VALUES.len());
+
+        let mut i = t.iter();
+        let mut expected_len = t.len();
+        let mut vs = VALUES.iter().rev();
+        assert_eq!(i.size_hint(), (expected_len, Some(expected_len)));
+        while let Some(symbol) = i.next() {
+            expected_len -= 1;
+            assert_eq!(i.size_hint(), (expected_len, Some(expected_len)));
+            assert_eq!(Some(symbol.data()), vs.next());
+        }
+        assert_eq!(i.size_hint(), (0, Some(0)));
+    }
+
+    #[test]
+    fn moved_table_internal_address_unchanged_ok() {
+        let mut stack_table = Table::<usize>::new();
+        let mut original_data_addresses = Vec::new();
+        let mut original_symbol_addresses = Vec::new();
+        for v in VALUES.iter() {
+            let symbol = stack_table.insert(*v);
+            assert_eq!(*symbol.data(), *v);
+            original_data_addresses.push(symbol.data() as *const usize);
+            original_symbol_addresses.push(symbol as *const Symbol<usize>);
+        }
+
+        let heap_table = Box::new(stack_table);
+        let mut count =0;
+        for (symbol, (value, (data_address, symbol_address))) in heap_table.iter().zip(
+            VALUES.iter().rev().zip(
+                original_data_addresses.into_iter().rev().zip(
+                    original_symbol_addresses.into_iter().rev()))) {
+            assert_eq!(symbol.data(), value);
+            assert_eq!(symbol.data() as *const usize, data_address);
+            assert_eq!(symbol as *const Symbol<usize>, symbol_address);
+            count += 1;
+        }
+        assert_eq!(count, VALUES.len());
+    }
+}
