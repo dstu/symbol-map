@@ -1,4 +1,5 @@
 use std::cmp::{Eq, Ord, Ordering, PartialEq};
+use std::collections::HashMap;
 use std::default::Default;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -127,7 +128,7 @@ impl<T, D> Table<T, D> where D: SymbolId {
 
     /// Inserts `value` into the table and assigns it an id. The same value may
     /// be inserted more than once. To prevent such operations, use the
-    /// `get_or_insert()` method of `Index`.
+    /// `get_or_insert()` method of `Indexing`.
     ///
     /// Returns a reference to the newly created symbol.
     pub fn insert(&mut self, value: T) -> &Symbol<T, D> {
@@ -143,6 +144,47 @@ impl<T, D> Table<T, D> where D: SymbolId {
         (&self.head).as_ref().unwrap()
     }
 
+    /// Remaps associations between `T`s and `D`s, selectively dropping some
+    /// associations entirely. The addresses of `Symbol<T>`s for entries which
+    /// are retained do not change.
+    ///
+    /// `(T, D)` associations for which `f` returns `Some(d)` will be remapped
+    /// to use `d`.
+    ///
+    /// `(T, D)` associations for which `f` returns `None` will be dropped.
+    ///
+    /// It is the responsibility of the caller to maintain the following:
+    ///
+    /// - The final mapping should be a dense range of whole numbers starting at 0.
+    ///
+    /// - No two different `T`s are associated with the same `D`.
+    pub fn remap<F>(&mut self, mut f: F) where F: FnMut(&Symbol<T, D>) -> Option<D> {
+        // Destructively walk linked list, selectively moving boxed symbols into
+        // a new list and reassigning `SymbolId`s as we go. This is done in
+        // place, without making new allocations for the elements that we
+        // retain.
+        let mut remapped = Table::new();
+        let mut head = None;
+        mem::swap(&mut head, &mut self.head);
+        loop {
+            head = match head {
+                None => break,
+                Some(mut symbol) =>
+                    if let Some(new_state_id) = f(&symbol) {
+                        let mut next_head = None;
+                        mem::swap(&mut next_head, &mut symbol.next);
+                        symbol.id = new_state_id;
+                        remapped.emplace_head(symbol);
+                        remapped.next_id = remapped.next_id.next();
+                        next_head
+                    } else {
+                        symbol.next
+                    },
+            }
+        }
+        mem::swap(&mut remapped, self);
+    }
+
     /// Returns an iterator over table entries.
     pub fn iter<'s>(&'s self) -> TableIter<'s, T, D> {
         TableIter {
@@ -151,44 +193,33 @@ impl<T, D> Table<T, D> where D: SymbolId {
         }
     }
 
-    /// Sets `value` as the head of this list, assigning it a new `SymbolId` as
-    /// if it were added by `insert()`. If `value` is already the head of
+    /// Sets `value` as the head of this list. If `value` is already the head of
     /// another list, its subsequent list elements are dropped.
     fn emplace_head(&mut self, mut value: Box<Symbol<T, D>>) {
-        let next_id = self.next_id;
-        self.next_id = self.next_id.next();
-        value.id = next_id;
         mem::swap(&mut value.next, &mut self.head);
         mem::swap(&mut self.head, &mut Some(value));
     }
+}
 
-    /// Drops all table entries which do not satisfy `predicate`. The address of
-    /// `Symbol<T>`s for entries which are retained does not change. The
-    /// `SymbolId`s associated with table entries may change arbitrarily (but
-    /// will remain a dense range of unique values starting at 0).
-    pub fn retain<F>(&mut self, mut predicate: F)  where F: FnMut(&Symbol<T, D>) -> bool {
-        // Destructively walk linked list, removing elements for which
-        // predicate(symbol) returns false, reassigning `SymbolId`s as we
-        // go. This is done in place, without making new allocations for the
-        // elements that we retain.
-        let mut retained = Table::new();
-        let mut head = None;
-        mem::swap(&mut head, &mut self.head);
+impl<T, D> Table<T, D> where T: Eq + Hash, D: SymbolId {
+    /// Converts `self` to a `HashMap` holding the same associations as
+    /// `self`. If the same key occurs in `self` more than once, then duplicate
+    /// occurrences will be dropped arbitrarily.
+    pub fn to_hash_map(mut self) -> HashMap<T, D> {
+        let mut map = HashMap::with_capacity(self.len());
         loop {
-            head = match head {
+            self.head = match self.head {
                 None => break,
-                Some(mut symbol) =>
-                    if predicate(&symbol) {
-                        let mut next_head = None;
-                        mem::swap(&mut next_head, &mut symbol.next);
-                        retained.emplace_head(symbol);
-                        next_head
-                    } else {
-                        symbol.next
-                    },
+                Some(mut symbol) => {
+                    let id = symbol.id().clone();
+                    let mut next_head = None;
+                    mem::swap(&mut next_head, &mut symbol.next);
+                    map.insert(symbol.data, id);
+                    next_head
+                },
             }
         }
-        mem::swap(self, &mut retained);
+        map
     }
 }
 
@@ -223,6 +254,7 @@ impl<'a, T, D> Iterator for TableIter<'a, T, D> where T: 'a, D: 'a + SymbolId {
 mod test {
     use super::{Symbol, SymbolId, Table};
 
+    use std::collections::HashMap;
     use std::default::Default;
 
     const VALUES: &'static [usize] = &[101, 203, 500, 30, 0, 1];
@@ -327,5 +359,77 @@ mod test {
             count += 1;
         }
         assert_eq!(count, VALUES.len());
+    }
+
+    #[test]
+    fn remap_empty_ok() {
+        let mut t = Table::<usize, u8>::new();
+        assert_eq!(t.len(), 0);
+        t.remap(|symbol| Some(symbol.id().clone()));
+        assert_eq!(t.len(), 0);
+    }
+
+    #[test]
+    fn remap_noop_ok() {
+        let mut t1 = Table::<usize, u8>::new();
+        for v in VALUES.iter() {
+            t1.insert(*v);
+        }
+
+        let mut t2 = Table::<usize, u8>::new();
+        for v in VALUES.iter() {
+            t2.insert(*v);
+        }
+        t2.remap(|symbol| Some(symbol.id().clone()));
+
+        assert_eq!(t2.len(), t1.len());
+        assert_eq!(t2.to_hash_map(), t1.to_hash_map());
+    }
+
+    #[test]
+    fn remap_all_ok() {
+        let mut t = Table::<usize, u8>::new();
+        for v in VALUES.iter() {
+            t.insert(*v);
+        }
+        let mut new_id = 0u8;
+        let mut expected_associations = HashMap::new();
+        t.remap(|symbol| {
+            let id = new_id;
+            new_id += 1;
+            expected_associations.insert(*symbol.data(), id);
+            Some(id)
+        });
+        assert_eq!(t.to_hash_map(), expected_associations);
+    }
+
+    #[test]
+    fn remap_some_ok() {
+        let mut t = Table::<usize, u8>::new();
+        for v in VALUES.iter() {
+            t.insert(*v);
+        }
+        let mut new_id = 0u8;
+        let mut expected_associations = HashMap::new();
+        t.remap(|symbol|
+                if symbol.id() % 2 == 0 {
+                    let id = new_id;
+                    new_id += 1;
+                    expected_associations.insert(*symbol.data(), id);
+                    Some(id)
+                } else {
+                    None
+                });
+        assert_eq!(t.to_hash_map(), expected_associations);
+    }
+
+    #[test]
+    fn remap_none_ok() {
+        let mut t = Table::<usize, u8>::new();
+        for v in VALUES.iter() {
+            t.insert(*v);
+        }
+        t.remap(|_| None);
+        assert_eq!(t.len(), 0);
     }
 }
