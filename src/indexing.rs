@@ -9,11 +9,11 @@ use std::hash::{Hash, Hasher};
 use super::{Symbol, SymbolId, Table};
 
 /// Indicates whether a symbol lookup had to create a new table entry.
-pub enum Insertion<'a, T> where T: 'a {
+pub enum Insertion<'a, T, D> where T: 'a, D: 'a + SymbolId {
     /// Symbol was already present in table.
-    Present(&'a Symbol<T>),
+    Present(&'a Symbol<T, D>),
     /// Symbol was not present in table, and a new entry was created for it.
-    New(&'a Symbol<T>),
+    New(&'a Symbol<T, D>),
 }
 
 /// Wrapper for a raw pointer which lets us treat it like a reference.
@@ -116,42 +116,45 @@ impl<T> PartialOrd for Ref<T> where T: PartialOrd {
 /// This trait is provided for extensibility. Realistically speaking, however,
 /// you should probably just use `HashIndexing`.
 pub trait Indexing: Default {
-    /// The type `T` of a `Table<T>`.
+    /// The type `T` of a `Table<T, D>`.
     type Data;
+
+    /// The type `D` of a `Table<T, D>`.
+    type Id: SymbolId;
 
     /// Returns a new indexing method that has already indexed the contents of
     /// `table`.
-    fn from_table(table: Table<Self::Data>) -> Self;
+    fn from_table(table: Table<Self::Data, Self::Id>) -> Self;
 
     /// Returns a read-only view of the underlying table.
-    fn table(&self) -> &Table<Self::Data>;
+    fn table(&self) -> &Table<Self::Data, Self::Id>;
 
     /// Extracts the underlying table from the index, discarding all pointers
     /// into the table.
-    fn to_table(self) -> Table<Self::Data>;
+    fn to_table(self) -> Table<Self::Data, Self::Id>;
 
     /// Looks up `data` in the index. Returns `Some(symbol)` if a symbol is
     /// present, else `None`.
-    fn get(&self, data: &Self::Data) -> Option<&Symbol<Self::Data>>;
+    fn get(&self, data: &Self::Data) -> Option<&Symbol<Self::Data, Self::Id>>;
 
     /// Looks up `data` in the index, inserting it into the index and `table` if
     /// it isn't present. Returns the resulting `Symbol<T>` wrapped in an
     /// `Insertion` that indicates whether a new table entry had to be created.
-    fn get_or_insert<'s>(&'s mut self, data: Self::Data) -> Insertion<'s, Self::Data>;
+    fn get_or_insert<'s>(&'s mut self, data: Self::Data) -> Insertion<'s, Self::Data, Self::Id>;
 
     /// Looks up the symbol with id `i` in the index. Returns `Some(symbol)` if
     /// a symbol is present, else `None`.
-    fn get_symbol<'s>(&'s self, id: &SymbolId) -> Option<&'s Symbol<Self::Data>>;
+    fn get_symbol<'s>(&'s self, id: &Self::Id) -> Option<&'s Symbol<Self::Data, Self::Id>>;
 }
 
 /// HashMap-backed table indexing.
-pub struct HashIndexing<T> where T: Eq + Hash {
-    table: Table<T>,
-    by_symbol: HashMap<Ref<T>, Ref<Symbol<T>>>,
-    by_id: Vec<Ref<Symbol<T>>>,
+pub struct HashIndexing<T, D> where T: Eq + Hash, D: SymbolId {
+    table: Table<T, D>,
+    by_symbol: HashMap<Ref<T>, Ref<Symbol<T, D>>>,
+    by_id: Vec<Ref<Symbol<T, D>>>,
 }
 
-impl<T> Default for HashIndexing<T> where T: Eq + Hash {
+impl<T, D> Default for HashIndexing<T, D> where T: Eq + Hash, D: SymbolId {
     fn default() -> Self {
         HashIndexing {
             table: Table::new(),
@@ -161,10 +164,11 @@ impl<T> Default for HashIndexing<T> where T: Eq + Hash {
     }
 }
 
-impl<T> Indexing for HashIndexing<T> where T: Eq + Hash {
+impl<T, D> Indexing for HashIndexing<T, D> where T: Eq + Hash, D: SymbolId {
     type Data = T;
+    type Id = D;
 
-    fn from_table(table: Table<T>) -> Self {
+    fn from_table(table: Table<T, D>) -> Self {
         let mut by_symbol = HashMap::with_capacity(table.len());
         let mut by_id =
             match table.iter().next() {
@@ -182,17 +186,17 @@ impl<T> Indexing for HashIndexing<T> where T: Eq + Hash {
         }
     }
 
-    fn table(&self) -> &Table<Self::Data> { &self.table }
+    fn table(&self) -> &Table<Self::Data, Self::Id> { &self.table }
 
-    fn to_table(self) -> Table<Self::Data> { self.table }
+    fn to_table(self) -> Table<Self::Data, Self::Id> { self.table }
 
-    fn get<'s>(&'s self, data: &T) -> Option<&'s Symbol<T>> {
+    fn get<'s>(&'s self, data: &T) -> Option<&'s Symbol<T, D>> {
         // Unsafe call to Ref::deref(): should be fine as because we own
         // self.table and the ref refers into that.
         self.by_symbol.get(&Ref::new(data)).map(|x| unsafe { x.deref() })
     }
 
-    fn get_or_insert<'s>(&'s mut self, data: T) -> Insertion<'s, T> {
+    fn get_or_insert<'s>(&'s mut self, data: T) -> Insertion<'s, T, D> {
         use std::collections::hash_map::Entry;
         if let Entry::Occupied(e) = self.by_symbol.entry(Ref::new(&data)) {
             // Unsafe call to Ref::deref(): should be fine as because we own
@@ -209,7 +213,7 @@ impl<T> Indexing for HashIndexing<T> where T: Eq + Hash {
         Insertion::New(symbol)
     }
 
-    fn get_symbol<'s>(&'s self, id: &SymbolId) -> Option<&'s Symbol<T>> {
+    fn get_symbol<'s>(&'s self, id: &D) -> Option<&'s Symbol<T, D>> {
         self.by_id.get(id.as_usize()).map(|x| unsafe { x.deref() })
     }
 }
@@ -283,7 +287,7 @@ mod test {
 
     #[test]
     fn hash_indexing_empty_ok() {
-        let t = Table::<usize>::new();
+        let t = Table::<usize, usize>::new();
         assert_eq!(t.len(), 0);
         let i = HashIndexing::from_table(t);
         assert!(i.by_symbol.is_empty());
@@ -292,13 +296,13 @@ mod test {
 
     #[test]
     fn hash_indexing_from_table_ok() {
-        let mut t = Table::<usize>::new();
+        let mut t = Table::<usize, usize>::new();
         for v in VALUES.iter() {
             t.insert(*v);
         }
         let expected_len = t.len();
-        let expected_values: Vec<(usize, SymbolId)> =
-            t.iter().map(|s| (*s.data(), s.id())).collect();
+        let expected_values: Vec<(usize, usize)> =
+            t.iter().map(|s| (*s.data(), *s.id())).collect();
 
         let i = HashIndexing::from_table(t);
         assert_eq!(i.by_symbol.len(), expected_len);
@@ -307,7 +311,7 @@ mod test {
             let data_ref = Ref::new(&data);
             unsafe {
                 assert_eq!(i.by_symbol.get(&data_ref).unwrap().deref().data(), &data);
-                assert_eq!(i.by_symbol.get(&data_ref).unwrap().deref().id(), id);
+                assert_eq!(i.by_symbol.get(&data_ref).unwrap().deref().id(), &id);
                 assert_eq!(i.by_id[id.as_usize()].deref().data(), &data);
             }
         }
@@ -315,7 +319,7 @@ mod test {
 
     #[test]
     fn hash_indexing_empty_insertion_ok() {
-        let mut i = HashIndexing::default();
+        let mut i = HashIndexing::<usize, usize>::default();
 
         for v in VALUES.iter() {
             assert!(i.get(v).is_none());
@@ -323,7 +327,7 @@ mod test {
                 Insertion::Present(_) => panic!(),
                 Insertion::New(symbol) => {
                     assert_eq!(symbol.data(), v);
-                    symbol.id()
+                    *symbol.id()
                 },
             };
             assert_eq!(i.get_symbol(&id).unwrap().data(), v);
@@ -333,7 +337,7 @@ mod test {
     
     #[test]
     fn indexed_present_ok() {
-        let mut t = Table::<usize>::new();
+        let mut t = Table::<usize, usize>::new();
         for v in VALUES.iter() {
             t.insert(*v);
         }
@@ -345,7 +349,7 @@ mod test {
                 Insertion::New(_) => panic!(),
                 Insertion::Present(symbol) => {
                     assert_eq!(symbol.data(), v);
-                    symbol.id()
+                    *symbol.id()
                 },
             };
             assert_eq!(i.get_symbol(&id).unwrap().data(), v);
@@ -357,35 +361,35 @@ mod test {
         use std::sync::Arc;
         use std::thread;
 
-        let mut t = Table::<usize>::new();
+        let mut t = Table::<usize, usize>::new();
         for v in VALUES.iter() {
             t.insert(*v);
         }
         let index = Arc::new(HashIndexing::from_table(t));
         {
-            let id1 = index.get(&VALUES[0]).unwrap().id();
-            let id2 = index.get(&VALUES[1]).unwrap().id();
+            let id1 = index.get(&VALUES[0]).unwrap().id().clone();
+            let id2 = index.get(&VALUES[1]).unwrap().id().clone();
             let t1 = {
                 let index = index.clone();
-                thread::spawn(move || index.get_symbol(&id1).map(|x| (*x.data(), x.id())))
+                thread::spawn(move || index.get_symbol(&id1).map(|x| (*x.data(), x.id().clone())))
             };
             let t2 = {
                 let index = index.clone();
-                thread::spawn(move || index.get_symbol(&id2).map(|x| (*x.data(), x.id())))
+                thread::spawn(move || index.get_symbol(&id2).map(|x| (*x.data(), x.id().clone())))
             };
             let v1 = index.get(&VALUES[0]).unwrap();
             let v2 = index.get(&VALUES[1]).unwrap();
 
             match t1.join() {
                 Ok(Some((data, id))) => {
-                    assert_eq!(id, v1.id());
+                    assert_eq!(&id, v1.id());
                     assert_eq!(data, *v1.data());
                 },
                 _ => panic!(),
             }
             match t2.join() {
                 Ok(Some((data, id))) => {
-                    assert_eq!(id, v2.id());
+                    assert_eq!(&id, v2.id());
                     assert_eq!(data, *v2.data());
                 },
                 _ => panic!(),
@@ -398,16 +402,16 @@ mod test {
         use std::mem;
         use std::thread;
 
-        let mut t = Table::<usize>::new();
+        let mut t = Table::<usize, usize>::new();
         for v in VALUES.iter() {
             t.insert(*v);
         }
         let index = HashIndexing::from_table(t);
         // I totally promise not to use this (or any references obtained through
         // it) after the function exits. Swear on it, cross my heart, etc.
-        let fake_static_index: &'static HashIndexing<usize> = unsafe { mem::transmute(&index) };
-        let id1 = index.get(&VALUES[0]).unwrap().id();
-        let id2 = index.get(&VALUES[1]).unwrap().id();
+        let fake_static_index: &'static HashIndexing<usize, usize> = unsafe { mem::transmute(&index) };
+        let id1 = *index.get(&VALUES[0]).unwrap().id();
+        let id2 = *index.get(&VALUES[1]).unwrap().id();
         let t1 = 
             thread::spawn(move || fake_static_index.get_symbol(&id1).map(|x| (x.data(), x.id())));
         let t2 =

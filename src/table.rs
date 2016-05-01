@@ -1,5 +1,6 @@
 use std::cmp::{Eq, Ord, Ordering, PartialEq};
 use std::default::Default;
+use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::iter::Iterator;
 use std::mem;
@@ -9,16 +10,16 @@ use std::mem;
 /// Types `T` should not be mutated by any means once they are associated with a
 /// `SymbolId` and stored in a `Table`. Doing so may invalidate any caching or
 /// indexing that is done on top of the table.
-pub struct Symbol<T> {
-    id: SymbolId,
+pub struct Symbol<T, D> where D: SymbolId {
+    id: D,
     data: T,
-    next: Option<Box<Symbol<T>>>,
+    next: Option<Box<Symbol<T, D>>>,
 }
 
-impl<T> Symbol<T> {
+impl<T, D> Symbol<T, D> where D: SymbolId {
     /// Returns the symbol's ID.
-    pub fn id(&self) -> SymbolId {
-        self.id
+    pub fn id(&self) -> &D {
+        &self.id
     }
 
     /// Returns a reference to the symbol's data.
@@ -32,54 +33,66 @@ impl<T> Symbol<T> {
     }
 }
 
-impl<T> Hash for Symbol<T> where T: Hash {
+impl<T, D> Hash for Symbol<T, D> where T: Hash, D: SymbolId {
     fn hash<H>(&self, state: &mut H) where H: Hasher {
         self.data.hash(state)
     }
 }
 
-impl<T> PartialEq for Symbol<T> where T: PartialEq {
+impl<T, D> PartialEq for Symbol<T, D> where T: PartialEq, D: SymbolId {
     fn eq(&self, other: &Self) -> bool {
         self.data.eq(&other.data)
     }
 }
 
-impl<T> Eq for Symbol<T> where T: Eq { }
+impl<T, D> Eq for Symbol<T, D> where T: Eq, D: SymbolId { }
 
-impl<T> PartialOrd for Symbol<T> where T: PartialOrd {
+impl<T, D> PartialOrd for Symbol<T, D> where T: PartialOrd, D: SymbolId {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.data.partial_cmp(&other.data)
     }
 }
 
-impl<T> Ord for Symbol<T> where T: Ord {
+impl<T, D> Ord for Symbol<T, D> where T: Ord, D: SymbolId {
     fn cmp(&self, other: &Self) -> Ordering {
         self.data.cmp(&other.data)
     }
 }
 
 /// An atomic ID.
-#[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct SymbolId(usize);
-
-impl SymbolId {
+pub trait SymbolId:
+Copy + Clone + fmt::Debug + Default + Eq + Hash + Ord + PartialEq + PartialOrd + Send + Sync {
     /// Returns the ID immediately subsequent to this one.
-    pub fn next(&self) -> Self {
-        let SymbolId(x) = *self;
-        SymbolId(x + 1)
-    }
+    fn next(&self) -> Self;
 
     /// Casts the ID to a `usize`.
-    pub fn as_usize(&self) -> usize {
-        self.0
-    }
+    fn as_usize(&self) -> usize;
 }
 
-impl Default for SymbolId {
-    /// Returns the 0 ID.
-    fn default() -> Self {
-        SymbolId(0)
-    }
+impl SymbolId for usize {
+    fn next(&self) -> Self { *self + 1 }
+    fn as_usize(&self) -> usize { *self }
+}
+
+impl SymbolId for u8 {
+    fn next(&self) -> Self { *self + 1 }
+
+    fn as_usize(&self) -> usize { *self as usize }
+}
+
+impl SymbolId for u16 {
+    fn next(&self) -> Self { *self + 1 }
+    fn as_usize(&self) -> usize { *self as usize }
+}
+
+impl SymbolId for u32 {
+    fn next(&self) -> Self { *self + 1 }
+    fn as_usize(&self) -> usize { *self as usize }
+}
+
+impl SymbolId for u64 {
+    fn next(&self) -> Self { *self + 1 }
+    fn as_usize(&self) -> usize { *self as usize }
 }
 
 /// The head of a linked list associating `T`s with `SymbolId`s. `SymbolId`
@@ -93,12 +106,12 @@ impl Default for SymbolId {
 /// As a result, a table index may retain a raw pointer to a `Symbol<T>` as long
 /// as care is taken not to dereference or otherwise make use of such pointers
 /// after the symbol they point to has been dropped by `retain()`.
-pub struct Table<T> {
-    head: Option<Box<Symbol<T>>>,
-    next_id: SymbolId,
+pub struct Table<T, D> where D: SymbolId {
+    head: Option<Box<Symbol<T, D>>>,
+    next_id: D,
 }
 
-impl<T> Table<T> {
+impl<T, D> Table<T, D> where D: SymbolId {
     /// Creates a new, empty table.
     pub fn new() -> Self {
         Table {
@@ -109,8 +122,7 @@ impl<T> Table<T> {
 
     /// Returns the number of symbols in the table.
     pub fn len(&self) -> usize {
-        let SymbolId(len) = self.next_id;
-        len
+        self.next_id.as_usize()
     }
 
     /// Inserts `value` into the table and assigns it an id. The same value may
@@ -118,7 +130,7 @@ impl<T> Table<T> {
     /// `get_or_insert()` method of `Index`.
     ///
     /// Returns a reference to the newly created symbol.
-    pub fn insert(&mut self, value: T) -> &Symbol<T> {
+    pub fn insert(&mut self, value: T) -> &Symbol<T, D> {
         let next_id = self.next_id;
         self.next_id = self.next_id.next();
         let mut new_head = Box::new(Symbol {
@@ -132,7 +144,7 @@ impl<T> Table<T> {
     }
 
     /// Returns an iterator over table entries.
-    pub fn iter<'s>(&'s self) -> TableIter<'s, T> {
+    pub fn iter<'s>(&'s self) -> TableIter<'s, T, D> {
         TableIter {
             remaining: self.len(),
             item: (&self.head).as_ref(),
@@ -142,7 +154,7 @@ impl<T> Table<T> {
     /// Sets `value` as the head of this list, assigning it a new `SymbolId` as
     /// if it were added by `insert()`. If `value` is already the head of
     /// another list, its subsequent list elements are dropped.
-    fn emplace_head(&mut self, mut value: Box<Symbol<T>>) {
+    fn emplace_head(&mut self, mut value: Box<Symbol<T, D>>) {
         let next_id = self.next_id;
         self.next_id = self.next_id.next();
         value.id = next_id;
@@ -154,7 +166,7 @@ impl<T> Table<T> {
     /// `Symbol<T>`s for entries which are retained does not change. The
     /// `SymbolId`s associated with table entries may change arbitrarily (but
     /// will remain a dense range of unique values starting at 0).
-    pub fn retain<F>(&mut self, mut predicate: F)  where F: FnMut(&Symbol<T>) -> bool {
+    pub fn retain<F>(&mut self, mut predicate: F)  where F: FnMut(&Symbol<T, D>) -> bool {
         // Destructively walk linked list, removing elements for which
         // predicate(symbol) returns false, reassigning `SymbolId`s as we
         // go. This is done in place, without making new allocations for the
@@ -181,15 +193,15 @@ impl<T> Table<T> {
 }
 
 /// Iterator over table contents.
-pub struct TableIter<'a, T> where T: 'a {
+pub struct TableIter<'a, T, D> where T: 'a, D: 'a + SymbolId {
     remaining: usize,
-    item: Option<&'a Box<Symbol<T>>>,
+    item: Option<&'a Box<Symbol<T, D>>>,
 }
 
-impl<'a, T> Iterator for TableIter<'a, T> where T: 'a {
-    type Item = &'a Symbol<T>;
+impl<'a, T, D> Iterator for TableIter<'a, T, D> where T: 'a, D: 'a + SymbolId {
+    type Item = &'a Symbol<T, D>;
 
-    fn next(&mut self) -> Option<&'a Symbol<T>> {
+    fn next(&mut self) -> Option<&'a Symbol<T, D>> {
         let mut item = None;
         mem::swap(&mut item, &mut self.item);
         match item {
@@ -217,25 +229,24 @@ mod test {
 
     #[test]
     fn symbol_id_ok() {
-        let id = SymbolId::default();
+        let id: usize = Default::default();
         assert_eq!(id.as_usize(), 0);
         assert_eq!(id.next().as_usize(), 1);
         assert_eq!(id.next().next().as_usize(), 2);
         assert_eq!(id.as_usize(), 0);
-        assert_eq!(id, SymbolId::default());
     }
 
     #[test]
     fn new_table_empty_ok() {
-        let t = Table::<usize>::new();
+        let t = Table::<usize, usize>::new();
         assert!(t.head.is_none());
-        assert!(t.next_id == SymbolId::default());
+        assert!(t.next_id == 0);
         assert_eq!(t.len(), 0);
     }
 
     #[test]
     fn table_insert_ok() {
-        let mut t = Table::<usize>::new();
+        let mut t = Table::<usize, usize>::new();
         for (i, v) in VALUES.iter().enumerate() {
             t.insert(*v);
             assert_eq!(t.len(), i + 1);
@@ -265,7 +276,7 @@ mod test {
 
     #[test]
     fn table_empty_iter_ok() {
-        let t = Table::<usize>::new();
+        let t = Table::<usize, usize>::new();
         let mut i = t.iter();
         assert_eq!(i.size_hint(), (0, Some(0)));
         assert!(i.next().is_none());
@@ -274,7 +285,7 @@ mod test {
 
     #[test]
     fn table_iter_ok() {
-        let mut t = Table::<usize>::new();
+        let mut t = Table::<usize, u32>::new();
         for v in VALUES.iter() {
             t.insert(*v);
         }
@@ -294,14 +305,14 @@ mod test {
 
     #[test]
     fn moved_table_internal_address_unchanged_ok() {
-        let mut stack_table = Table::<usize>::new();
+        let mut stack_table = Table::<usize, u8>::new();
         let mut original_data_addresses = Vec::new();
         let mut original_symbol_addresses = Vec::new();
         for v in VALUES.iter() {
             let symbol = stack_table.insert(*v);
             assert_eq!(*symbol.data(), *v);
             original_data_addresses.push(symbol.data() as *const usize);
-            original_symbol_addresses.push(symbol as *const Symbol<usize>);
+            original_symbol_addresses.push(symbol as *const Symbol<usize, u8>);
         }
 
         let heap_table = Box::new(stack_table);
@@ -312,7 +323,7 @@ mod test {
                     original_symbol_addresses.into_iter().rev()))) {
             assert_eq!(symbol.data(), value);
             assert_eq!(symbol.data() as *const usize, data_address);
-            assert_eq!(symbol as *const Symbol<usize>, symbol_address);
+            assert_eq!(symbol as *const Symbol<usize, u8>, symbol_address);
             count += 1;
         }
         assert_eq!(count, VALUES.len());
