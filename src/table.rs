@@ -7,7 +7,7 @@ use std::mem;
 /// A table entry that associates an instance of `T` with an atomic symbol.
 ///
 /// Types `T` should not be mutated by any means once they are associated with a
-/// symbol and stored in a `Table`. Doing so may invalidate any caching or
+/// `SymbolId` and stored in a `Table`. Doing so may invalidate any caching or
 /// indexing that is done on top of the table.
 pub struct Symbol<T> {
     id: SymbolId,
@@ -90,10 +90,9 @@ impl Default for SymbolId {
 /// address does not change as long as its parent table exists and it is not
 /// dropped from the table*.
 ///
-/// As a result, a table index operations may retain a raw pointer to a
-/// `Symbol<T>` as long as care is taken not to dereference or otherwise make
-/// use of such pointers after the symbol they point to has been dropped by
-/// `retain()`.
+/// As a result, a table index may retain a raw pointer to a `Symbol<T>` as long
+/// as care is taken not to dereference or otherwise make use of such pointers
+/// after the symbol they point to has been dropped by `retain()`.
 pub struct Table<T> {
     head: Option<Box<Symbol<T>>>,
     next_id: SymbolId,

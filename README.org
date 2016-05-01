@@ -1,0 +1,31 @@
+* Overview
+
+This package provides a fast, memory-efficient mapping from values of an
+arbitrary (hashable) type to whole numbers. Read-only references to a symbol
+table are thread-safe.
+
+** Why bother?
+
+You can get a lot of this package's functionality with a structure like:
+
+#+BEGIN_SRC rust
+pub struct Table<T> where T: Hash + Eq {
+    // Mapping from T to usize.
+    by_symbol: HashMap<T, usize>,
+    // Mapping from usize to T.
+    by_id: Vec<T>,
+}
+#+END_SRC
+
+But then you're maintaining an extra copy of each =T=. You can resort to a
+=HashMap<Rc<T>, usize>= and =Vec<Rc<T>>=, but that forces you to pay the cost of
+reference counting and isn't easily shared across threads. Using =Arc= instead
+of =Rc= makes your type =Send=-able, but that has even more overhead than using
+=Rc=.
+
+Or you could use =search_table::HashIndexing<T>= and get a type that is =Send=
+and =Sync= when =T= is and owns only one =T= per association in the table.
+
+* Copyright
+
+Copyright 2016, [[https://abc.xyz][Alphabet]]. All rights reserved.
