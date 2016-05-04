@@ -411,40 +411,36 @@ mod test {
 
     #[test]
     fn sync_to_thread_ok() {
-        use std::mem;
-        use std::thread;
+        use ::crossbeam;
 
         let mut t = Table::<usize, usize>::new();
         for v in VALUES.iter() {
             t.insert(*v);
         }
         let index = HashIndexing::from_table(t);
-        // I totally promise not to use this (or any references obtained through
-        // it) after the function exits. Swear on it, cross my heart, etc.
-        let fake_static_index: &'static HashIndexing<usize, usize> = unsafe { mem::transmute(&index) };
         let id1 = *index.get(&VALUES[0]).unwrap().id();
         let id2 = *index.get(&VALUES[1]).unwrap().id();
+        let index = &index;
         let t1 = 
-            thread::spawn(move || fake_static_index.get_symbol(&id1).map(|x| (x.data(), x.id())));
+            crossbeam::scope(move |scope| scope.spawn(move || index.get_symbol(&id1).map(|x| (x.data(), x.id()))));
         let t2 =
-            thread::spawn(move || fake_static_index.get_symbol(&id2).map(|x| (x.data(), x.id())));
+            crossbeam::scope(move |scope| scope.spawn(move || index.get_symbol(&id2).map(|x| (x.data(), x.id()))));
         let v1 = index.get(&VALUES[0]).unwrap();
         let v2 = index.get(&VALUES[1]).unwrap();
 
         match t1.join() {
-            Ok(Some((data, id))) => {
+            Some((data, id)) => {
                 assert_eq!(id, v1.id());
                 assert_eq!(data, v1.data());
             },
             _ => panic!(),
         }
         match t2.join() {
-            Ok(Some((data, id))) => {
+            Some((data, id)) => {
                 assert_eq!(id, v2.id());
                 assert_eq!(data, v2.data());
             },
             _ => panic!(),
         }
-
     }
 }
