@@ -1,4 +1,12 @@
 //! Indexing on top of a `Table`.
+//!
+//! It is anticipated that most uses cases will be covered by
+//! [HashIndexing](struct.HashIndexing.html), which owns a
+//! [../struct.Table.html](Table) and provides bidirectional mappings between
+//! data values and their symbols.
+//!
+//! The [Indexing](trait.Indexing.html) trait is provided in case another lookup
+//! method is needed.
 
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::collections::HashMap;
@@ -11,14 +19,32 @@ use super::{Symbol, SymbolId, Table};
 /// Indicates whether the result of a symbol lookup had to create a new table
 /// entry.
 pub enum Insertion<T>  {
-    /// Result came from item that was already present in table.
+    /// Result came from an item that was already present in table.
     Present(T),
-    /// Result came from item that was not present in table, and a new entry was
-    /// created as a side effect.
+    /// Result came from an item that was not present in table, and a new entry
+    /// was created.
     New(T),
 }
 
 impl<T> Insertion<T> {
+    /// Maps over the type returned by an `Insertion` to produce a new value
+    /// that may be of a different type.
+    ///
+    /// # Example
+    /// ```
+    /// use symbol_table::indexing::{HashIndexing, Indexing, Insertion};
+    /// use std::str::FromStr;
+    ///
+    /// let mut index = HashIndexing::<String, usize>::default();
+    /// let s1 = String::from_str("value1").unwrap();
+    /// let s2 = String::from_str("value1").unwrap();
+    /// let s3 = String::from_str("value2").unwrap();
+    /// let id1: usize = index.get_or_insert(s1.clone()).map(|symbol| *symbol.id());
+    /// let id2: usize = index.get_or_insert(s2.clone()).map(|symbol| *symbol.id());
+    /// let id3: usize = index.get_or_insert(s3.clone()).map(|symbol| *symbol.id());
+    /// assert!(id1 == id2);
+    /// assert!(id1 != id3);
+    /// ```
     pub fn map<F, X>(&self, f: F) -> Insertion<X> where F: FnOnce(&T) -> X {
         match self {
             &Insertion::Present(ref s) => Insertion::Present(f(s)),
@@ -26,6 +52,7 @@ impl<T> Insertion<T> {
         }
     }
 
+    /// Unwraps an `Insertion` to produce a value of the type which it wraps.
     pub fn unwrap(self) -> T {
         match self {
             Insertion::Present(s) => s,
@@ -151,12 +178,12 @@ pub trait Indexing: Default {
     /// into the table.
     fn to_table(self) -> Table<Self::Data, Self::Id>;
 
-    /// Looks up `data` in the index. Returns `Some(symbol)` if a symbol is
+    /// Looks up `data` in the index. Returns `Some(&symbol)` if a symbol is
     /// present, else `None`.
     fn get(&self, data: &Self::Data) -> Option<&Symbol<Self::Data, Self::Id>>;
 
     /// Looks up `data` in the index, inserting it into the index and `table` if
-    /// it isn't present. Returns the resulting `Symbol<T>` wrapped in an
+    /// it isn't present. Returns the resulting `&Symbol<T>` wrapped in an
     /// `Insertion` that indicates whether a new table entry had to be created.
     fn get_or_insert<'s>(&'s mut self, data: Self::Data)
                          -> Insertion<&'s Symbol<Self::Data, Self::Id>>;
