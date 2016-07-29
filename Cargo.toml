@@ -1,6 +1,6 @@
 [package]
 name = "symbol-table"
-version = "0.1.0"
+version = "0.5.0"
 authors = ["Stu Black <trurl@freeshell.org>"]
 
 [dev-dependencies]
