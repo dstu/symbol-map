@@ -488,6 +488,13 @@
 <span id="444">444</span>
 <span id="445">445</span>
 <span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Indexing on top of a `Table`.</span>
 
@@ -514,6 +521,13 @@
         <span class='kw'>match</span> <span class='self'>self</span> {
             <span class='kw-2'>&amp;</span><span class='ident'>Insertion</span>::<span class='ident'>Present</span>(<span class='kw-2'>ref</span> <span class='ident'>s</span>) <span class='op'>=&gt;</span> <span class='ident'>Insertion</span>::<span class='ident'>Present</span>(<span class='ident'>f</span>(<span class='ident'>s</span>)),
             <span class='kw-2'>&amp;</span><span class='ident'>Insertion</span>::<span class='ident'>New</span>(<span class='kw-2'>ref</span> <span class='ident'>s</span>) <span class='op'>=&gt;</span> <span class='ident'>Insertion</span>::<span class='ident'>New</span>(<span class='ident'>f</span>(<span class='ident'>s</span>)),
+        }
+    }
+
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>unwrap</span>(<span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>T</span> {
+        <span class='kw'>match</span> <span class='self'>self</span> {
+            <span class='ident'>Insertion</span>::<span class='ident'>Present</span>(<span class='ident'>s</span>) <span class='op'>=&gt;</span> <span class='ident'>s</span>,
+            <span class='ident'>Insertion</span>::<span class='ident'>New</span>(<span class='ident'>s</span>) <span class='op'>=&gt;</span> <span class='ident'>s</span>,
         }
     }
 }

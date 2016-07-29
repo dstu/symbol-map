@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-225' class='srclink' href='../src/symbol_table/src/table.rs.html#110-113' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-229' class='srclink' href='../src/symbol_table/src/table.rs.html#110-113' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct Table&lt;T,&nbsp;D&gt; <span class='where'>where D: <a class='trait' href='../symbol_table/trait.SymbolId.html' title='symbol_table::SymbolId'>SymbolId</a></span> {
     // some fields omitted
 }</pre><div class='docblock'><p>The head of a linked list associating <code>T</code>s with <code>SymbolId</code>s. <code>SymbolId</code>
@@ -61,7 +61,7 @@ dropped from the table</em>.</p>
 <p>As a result, a table index may retain a raw pointer to a <code>Symbol&lt;T&gt;</code> as long
 as care is taken not to dereference or otherwise make use of such pointers
 after the symbol they point to has been dropped by <code>retain()</code>.</p>
-</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;T,&nbsp;D&gt; <a class='struct' href='../symbol_table/struct.Table.html' title='symbol_table::Table'>Table</a>&lt;T,&nbsp;D&gt; <span class='where'>where D: <a class='trait' href='../symbol_table/trait.SymbolId.html' title='symbol_table::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-230' class='srclink' href='../src/symbol_table/src/table.rs.html#115-202' title='goto source code'>[src]</a></span></h3>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;T,&nbsp;D&gt; <a class='struct' href='../symbol_table/struct.Table.html' title='symbol_table::Table'>Table</a>&lt;T,&nbsp;D&gt; <span class='where'>where D: <a class='trait' href='../symbol_table/trait.SymbolId.html' title='symbol_table::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-234' class='srclink' href='../src/symbol_table/src/table.rs.html#115-202' title='goto source code'>[src]</a></span></h3>
 <div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; Self</code></h4>
 <div class='docblock'><p>Creates a new, empty table.</p>
 </div><h4 id='method.len' class='method'><code>fn <a href='#method.len' class='fnname'>len</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
@@ -90,7 +90,7 @@ to use <code>d</code>.</p>
 </ul>
 </div><h4 id='method.iter' class='method'><code>fn <a href='#method.iter' class='fnname'>iter</a>&lt;'s&gt;(&amp;'s self) -&gt; <a class='struct' href='../symbol_table/struct.TableIter.html' title='symbol_table::TableIter'>TableIter</a>&lt;'s,&nbsp;T,&nbsp;D&gt;</code></h4>
 <div class='docblock'><p>Returns an iterator over table entries.</p>
-</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;T,&nbsp;D&gt; <a class='struct' href='../symbol_table/struct.Table.html' title='symbol_table::Table'>Table</a>&lt;T,&nbsp;D&gt; <span class='where'>where T: <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a>, D: <a class='trait' href='../symbol_table/trait.SymbolId.html' title='symbol_table::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-257' class='srclink' href='../src/symbol_table/src/table.rs.html#204-224' title='goto source code'>[src]</a></span></h3>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;T,&nbsp;D&gt; <a class='struct' href='../symbol_table/struct.Table.html' title='symbol_table::Table'>Table</a>&lt;T,&nbsp;D&gt; <span class='where'>where T: <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a>, D: <a class='trait' href='../symbol_table/trait.SymbolId.html' title='symbol_table::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-261' class='srclink' href='../src/symbol_table/src/table.rs.html#204-224' title='goto source code'>[src]</a></span></h3>
 <div class='impl-items'><h4 id='method.to_hash_map' class='method'><code>fn <a href='#method.to_hash_map' class='fnname'>to_hash_map</a>(self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html' title='std::collections::hash::map::HashMap'>HashMap</a>&lt;T,&nbsp;D&gt;</code></h4>
 <div class='docblock'><p>Converts <code>self</code> to a <code>HashMap</code> holding the same associations as
 <code>self</code>. If the same key occurs in <code>self</code> more than once, then duplicate
