@@ -47,19 +47,19 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-0' class='srclink' href='../src/symbol_table/src/lib.rs.html#1-53' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-0' class='srclink' href='../src/symbol_table/src/lib.rs.html#1-58' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Provides fast mapping of arbitrary values to symbolic identifiers.</p>
 
-<p>The mapping to symbols is stored in the <code>[Table](struct.Table.html)</code> type,
+<p>The mapping to symbols is stored in the <a href="struct.Table.html">Table</a> type,
 which retains ownership of the values being mapped. Any type that implements
-<code>[SymbolId](trait.SymbolId.html)</code> may be used as a symbol. Impls are provided
+<a href="trait.SymbolId.html">SymbolId</a> may be used as a symbol. Impls are provided
 for Rust&#39;s default unsigned integer types.</p>
 
-<p>Fast bidirectional lookup on top of a <code>Table</code> is provided by the
-<code>[indexing](indexing/index.html)</code> package, through the
-<code>[Indexing](indexing/trait.Indexing.html)</code> trait. For convenience, a
-<code>HashMap</code>-backed index is provided in
-<code>[HashIndexing](indexing/struct.HashIndexing.html)</code>.</p>
+<p>Fast bidirectional lookup on top of a Table is provided by the
+<a href="indexing/index.html">indexing</a> package, through the
+<a href="indexing/trait.Indexing.html">Indexing</a> trait. For convenience, a
+HashMap-backed index is provided in
+<a href="indexing/struct.HashIndexing.html">HashIndexing</a>.</p>
 
 <h1 id='example' class='section-header'><a href='#example'>Example</a></h1>
 <pre class='rust rust-example-rendered'>
@@ -74,6 +74,11 @@ for Rust&#39;s default unsigned integer types.</p>
 <span class='comment'>// We lose ownership of values passed to get_or_insert, so we pass in</span>
 <span class='comment'>// clones of our data.</span>
 {
+    <span class='comment'>// The value returned by get_or_inset tells us whether a new association</span>
+    <span class='comment'>// was inserted, but we just unwrap it here. The resulting association</span>
+    <span class='comment'>// has a borrow of the index and its underlying symbol table, so we</span>
+    <span class='comment'>// restrict assoc to this inner scope in order to make additional</span>
+    <span class='comment'>// insertions below.</span>
     <span class='kw'>let</span> <span class='ident'>assoc</span> <span class='op'>=</span> <span class='ident'>pos_index</span>.<span class='ident'>get_or_insert</span>(<span class='ident'>s1</span>.<span class='ident'>clone</span>()).<span class='ident'>unwrap</span>();
     <span class='macro'>assert</span><span class='macro'>!</span>(<span class='op'>*</span><span class='ident'>assoc</span>.<span class='ident'>id</span>() <span class='op'>==</span> <span class='number'>0</span>);
     <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>assoc</span>.<span class='ident'>data</span>() <span class='op'>==</span> <span class='kw-2'>&amp;</span><span class='ident'>s1</span>);

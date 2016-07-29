@@ -495,8 +495,51 @@
 <span id="451">451</span>
 <span id="452">452</span>
 <span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Indexing on top of a `Table`.</span>
+<span class='doccomment'>//!</span>
+<span class='doccomment'>//! It is anticipated that most uses cases will be covered by</span>
+<span class='doccomment'>//! [HashIndexing](struct.HashIndexing.html), which owns a</span>
+<span class='doccomment'>//! [../struct.Table.html](Table) and provides bidirectional mappings between</span>
+<span class='doccomment'>//! data values and their symbols.</span>
+<span class='doccomment'>//!</span>
+<span class='doccomment'>//! The [Indexing](trait.Indexing.html) trait is provided in case another lookup</span>
+<span class='doccomment'>//! method is needed.</span>
 
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>cmp</span>::{<span class='ident'>Eq</span>, <span class='ident'>Ord</span>, <span class='ident'>Ordering</span>, <span class='ident'>PartialEq</span>, <span class='ident'>PartialOrd</span>};
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>collections</span>::<span class='ident'>HashMap</span>;
@@ -508,15 +551,41 @@
 
 <span class='doccomment'>/// Indicates whether the result of a symbol lookup had to create a new table</span>
 <span class='doccomment'>/// entry.</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Eq</span>, <span class='ident'>Ord</span>, <span class='ident'>Hash</span>, <span class='ident'>PartialEq</span>, <span class='ident'>PartialOrd</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>Insertion</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span>  {
-    <span class='doccomment'>/// Result came from item that was already present in table.</span>
+    <span class='doccomment'>/// Result came from an item that was already present in table.</span>
     <span class='ident'>Present</span>(<span class='ident'>T</span>),
-    <span class='doccomment'>/// Result came from item that was not present in table, and a new entry was</span>
-    <span class='doccomment'>/// created as a side effect.</span>
+    <span class='doccomment'>/// Result came from an item that was not present in table, and a new entry</span>
+    <span class='doccomment'>/// was created.</span>
     <span class='ident'>New</span>(<span class='ident'>T</span>),
 }
 
 <span class='kw'>impl</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> <span class='ident'>Insertion</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> {
+    <span class='doccomment'>/// Maps over the type returned by an `Insertion` to produce a new value</span>
+    <span class='doccomment'>/// that may be of a different type.</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// # Example</span>
+    <span class='doccomment'>/// ```</span>
+    <span class='doccomment'>/// use symbol_table::indexing::{HashIndexing, Indexing, Insertion};</span>
+    <span class='doccomment'>/// use std::str::FromStr;</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// let mut index = HashIndexing::&lt;String, usize&gt;::default();</span>
+    <span class='doccomment'>/// let s1 = String::from_str(&quot;value1&quot;).unwrap();</span>
+    <span class='doccomment'>/// let s2 = String::from_str(&quot;value1&quot;).unwrap();</span>
+    <span class='doccomment'>/// let s3 = String::from_str(&quot;value2&quot;).unwrap();</span>
+    <span class='doccomment'>/// // get_or_insert normally returns an Insertion that borrows the</span>
+    <span class='doccomment'>/// // structure on which it was invoked. We map the symbol reference</span>
+    <span class='doccomment'>/// // returned after each insertion to a copy of the ID that was mapped to.</span>
+    <span class='doccomment'>/// let id1: Insertion&lt;usize&gt; = index.get_or_insert(s1).map(|symbol| *symbol.id());</span>
+    <span class='doccomment'>/// let id2: Insertion&lt;usize&gt; = index.get_or_insert(s2).map(|symbol| *symbol.id());</span>
+    <span class='doccomment'>/// let id3: Insertion&lt;usize&gt; = index.get_or_insert(s3).map(|symbol| *symbol.id());</span>
+    <span class='doccomment'>/// // The Insertion values are not the same because one was an insertion and</span>
+    <span class='doccomment'>/// // the other a retrieval.</span>
+    <span class='doccomment'>/// assert!(id1 != id2);</span>
+    <span class='doccomment'>/// assert!(id1 != id3);</span>
+    <span class='doccomment'>/// // But the symbol IDs for identical values are the same.</span>
+    <span class='doccomment'>/// assert!(id1.unwrap() == id2.unwrap());</span>
+    <span class='doccomment'>/// ```</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>map</span><span class='op'>&lt;</span><span class='ident'>F</span>, <span class='ident'>X</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>f</span>: <span class='ident'>F</span>) <span class='op'>-&gt;</span> <span class='ident'>Insertion</span><span class='op'>&lt;</span><span class='ident'>X</span><span class='op'>&gt;</span> <span class='kw'>where</span> <span class='ident'>F</span>: <span class='ident'>FnOnce</span>(<span class='kw-2'>&amp;</span><span class='ident'>T</span>) <span class='op'>-&gt;</span> <span class='ident'>X</span> {
         <span class='kw'>match</span> <span class='self'>self</span> {
             <span class='kw-2'>&amp;</span><span class='ident'>Insertion</span>::<span class='ident'>Present</span>(<span class='kw-2'>ref</span> <span class='ident'>s</span>) <span class='op'>=&gt;</span> <span class='ident'>Insertion</span>::<span class='ident'>Present</span>(<span class='ident'>f</span>(<span class='ident'>s</span>)),
@@ -524,6 +593,7 @@
         }
     }
 
+    <span class='doccomment'>/// Unwraps an `Insertion` to produce the value which it wraps.</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>unwrap</span>(<span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>T</span> {
         <span class='kw'>match</span> <span class='self'>self</span> {
             <span class='ident'>Insertion</span>::<span class='ident'>Present</span>(<span class='ident'>s</span>) <span class='op'>=&gt;</span> <span class='ident'>s</span>,
@@ -649,12 +719,12 @@
     <span class='doccomment'>/// into the table.</span>
     <span class='kw'>fn</span> <span class='ident'>to_table</span>(<span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>Table</span><span class='op'>&lt;</span><span class='self'>Self</span>::<span class='ident'>Data</span>, <span class='self'>Self</span>::<span class='ident'>Id</span><span class='op'>&gt;</span>;
 
-    <span class='doccomment'>/// Looks up `data` in the index. Returns `Some(symbol)` if a symbol is</span>
+    <span class='doccomment'>/// Looks up `data` in the index. Returns `Some(&amp;symbol)` if a symbol is</span>
     <span class='doccomment'>/// present, else `None`.</span>
     <span class='kw'>fn</span> <span class='ident'>get</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>data</span>: <span class='kw-2'>&amp;</span><span class='self'>Self</span>::<span class='ident'>Data</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>Symbol</span><span class='op'>&lt;</span><span class='self'>Self</span>::<span class='ident'>Data</span>, <span class='self'>Self</span>::<span class='ident'>Id</span><span class='op'>&gt;&gt;</span>;
 
     <span class='doccomment'>/// Looks up `data` in the index, inserting it into the index and `table` if</span>
-    <span class='doccomment'>/// it isn&#39;t present. Returns the resulting `Symbol&lt;T&gt;` wrapped in an</span>
+    <span class='doccomment'>/// it isn&#39;t present. Returns the resulting `&amp;Symbol&lt;T&gt;` wrapped in an</span>
     <span class='doccomment'>/// `Insertion` that indicates whether a new table entry had to be created.</span>
     <span class='kw'>fn</span> <span class='ident'>get_or_insert</span><span class='op'>&lt;</span><span class='lifetime'>&#39;s</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;s</span> <span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>data</span>: <span class='self'>Self</span>::<span class='ident'>Data</span>)
                          <span class='op'>-&gt;</span> <span class='ident'>Insertion</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;s</span> <span class='ident'>Symbol</span><span class='op'>&lt;</span><span class='self'>Self</span>::<span class='ident'>Data</span>, <span class='self'>Self</span>::<span class='ident'>Id</span><span class='op'>&gt;&gt;</span>;

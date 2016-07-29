@@ -95,19 +95,24 @@
 <span id="51">51</span>
 <span id="52">52</span>
 <span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Provides fast mapping of arbitrary values to symbolic identifiers.</span>
 <span class='doccomment'>//!</span>
-<span class='doccomment'>//! The mapping to symbols is stored in the `[Table](struct.Table.html)` type,</span>
+<span class='doccomment'>//! The mapping to symbols is stored in the [Table](struct.Table.html) type,</span>
 <span class='doccomment'>//! which retains ownership of the values being mapped. Any type that implements</span>
-<span class='doccomment'>//! `[SymbolId](trait.SymbolId.html)` may be used as a symbol. Impls are provided</span>
+<span class='doccomment'>//! [SymbolId](trait.SymbolId.html) may be used as a symbol. Impls are provided</span>
 <span class='doccomment'>//! for Rust&#39;s default unsigned integer types.</span>
 <span class='doccomment'>//!</span>
-<span class='doccomment'>//! Fast bidirectional lookup on top of a `Table` is provided by the</span>
-<span class='doccomment'>//! `[indexing](indexing/index.html)` package, through the</span>
-<span class='doccomment'>//! `[Indexing](indexing/trait.Indexing.html)` trait. For convenience, a</span>
-<span class='doccomment'>//! `HashMap`-backed index is provided in</span>
-<span class='doccomment'>//! `[HashIndexing](indexing/struct.HashIndexing.html)`.</span>
+<span class='doccomment'>//! Fast bidirectional lookup on top of a Table is provided by the</span>
+<span class='doccomment'>//! [indexing](indexing/index.html) package, through the</span>
+<span class='doccomment'>//! [Indexing](indexing/trait.Indexing.html) trait. For convenience, a</span>
+<span class='doccomment'>//! HashMap-backed index is provided in</span>
+<span class='doccomment'>//! [HashIndexing](indexing/struct.HashIndexing.html).</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! # Example</span>
 <span class='doccomment'>//!</span>
@@ -123,6 +128,11 @@
 <span class='doccomment'>//! // We lose ownership of values passed to get_or_insert, so we pass in</span>
 <span class='doccomment'>//! // clones of our data.</span>
 <span class='doccomment'>//! {</span>
+<span class='doccomment'>//!     // The value returned by get_or_inset tells us whether a new association</span>
+<span class='doccomment'>//!     // was inserted, but we just unwrap it here. The resulting association</span>
+<span class='doccomment'>//!     // has a borrow of the index and its underlying symbol table, so we</span>
+<span class='doccomment'>//!     // restrict assoc to this inner scope in order to make additional</span>
+<span class='doccomment'>//!     // insertions below.</span>
 <span class='doccomment'>//!     let assoc = pos_index.get_or_insert(s1.clone()).unwrap();</span>
 <span class='doccomment'>//!     assert!(*assoc.id() == 0);</span>
 <span class='doccomment'>//!     assert!(assoc.data() == &amp;s1);</span>
