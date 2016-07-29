@@ -2,7 +2,7 @@
 //!
 //! It is anticipated that most uses cases will be covered by
 //! [HashIndexing](struct.HashIndexing.html), which owns a
-//! [../struct.Table.html](Table) and provides bidirectional mappings between
+//! [Table](../struct.Table.html) and provides bidirectional mappings between
 //! data values and their symbols.
 //!
 //! The [Indexing](trait.Indexing.html) trait is provided in case another lookup
