@@ -18,6 +18,7 @@ use super::{Symbol, SymbolId, Table};
 
 /// Indicates whether the result of a symbol lookup had to create a new table
 /// entry.
+#[derive(Clone, Eq, Ord, Hash, PartialEq, PartialOrd)]
 pub enum Insertion<T>  {
     /// Result came from an item that was already present in table.
     Present(T),
@@ -39,11 +40,18 @@ impl<T> Insertion<T> {
     /// let s1 = String::from_str("value1").unwrap();
     /// let s2 = String::from_str("value1").unwrap();
     /// let s3 = String::from_str("value2").unwrap();
-    /// let id1: usize = index.get_or_insert(s1.clone()).map(|symbol| *symbol.id());
-    /// let id2: usize = index.get_or_insert(s2.clone()).map(|symbol| *symbol.id());
-    /// let id3: usize = index.get_or_insert(s3.clone()).map(|symbol| *symbol.id());
-    /// assert!(id1 == id2);
+    /// // get_or_insert normally returns an Insertion that borrows the
+    /// // structure on which it was invoked. We map the symbol reference
+    /// // returned after each insertion to a copy of the ID that was mapped to.
+    /// let id1: Insertion<usize> = index.get_or_insert(s1).map(|symbol| *symbol.id());
+    /// let id2: Insertion<usize> = index.get_or_insert(s2).map(|symbol| *symbol.id());
+    /// let id3: Insertion<usize> = index.get_or_insert(s3).map(|symbol| *symbol.id());
+    /// // The Insertion values are not the same because one was an insertion and
+    /// // the other a retrieval.
+    /// assert!(id1 != id2);
     /// assert!(id1 != id3);
+    /// // But the symbol IDs for identical values are the same.
+    /// assert!(id1.unwrap() == id2.unwrap());
     /// ```
     pub fn map<F, X>(&self, f: F) -> Insertion<X> where F: FnOnce(&T) -> X {
         match self {
@@ -52,7 +60,7 @@ impl<T> Insertion<T> {
         }
     }
 
-    /// Unwraps an `Insertion` to produce a value of the type which it wraps.
+    /// Unwraps an `Insertion` to produce the value which it wraps.
     pub fn unwrap(self) -> T {
         match self {
             Insertion::Present(s) => s,
