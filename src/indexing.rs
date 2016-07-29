@@ -25,6 +25,13 @@ impl<T> Insertion<T> {
             &Insertion::New(ref s) => Insertion::New(f(s)),
         }
     }
+
+    pub fn unwrap(self) -> T {
+        match self {
+            Insertion::Present(s) => s,
+            Insertion::New(s) => s,
+        }
+    }
 }
 
 /// Wrapper for a raw pointer which lets us treat it like a reference.
