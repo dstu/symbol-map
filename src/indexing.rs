@@ -54,10 +54,7 @@ impl<T> Insertion<T> {
     /// assert!(id1.unwrap() == id2.unwrap());
     /// ```
     pub fn map<F, X>(&self, f: F) -> Insertion<X> where F: FnOnce(&T) -> X {
-        match self {
-            &Insertion::Present(ref s) => Insertion::Present(f(s)),
-            &Insertion::New(ref s) => Insertion::New(f(s)),
-        }
+        match *self { .. }
     }
 
     /// Unwraps an `Insertion` to produce the value which it wraps.
