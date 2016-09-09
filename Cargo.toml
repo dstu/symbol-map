@@ -1,6 +1,6 @@
 [package]
-name = "symbol-table"
-version = "0.6.0"
+name = "symbol-map"
+version = "1.0.0"
 authors = ["Stu Black <trurl@freeshell.org>"]
 
 [dev-dependencies]

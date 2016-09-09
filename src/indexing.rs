@@ -33,7 +33,7 @@ impl<T> Insertion<T> {
     ///
     /// # Example
     /// ```
-    /// use symbol_table::indexing::{HashIndexing, Indexing, Insertion};
+    /// use symbol_map::indexing::{HashIndexing, Indexing, Insertion};
     /// use std::str::FromStr;
     ///
     /// let mut index = HashIndexing::<String, usize>::default();

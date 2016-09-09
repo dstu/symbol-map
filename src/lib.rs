@@ -14,7 +14,7 @@
 //! # Example
 //!
 //! ```
-//! use symbol_table::indexing::{HashIndexing,Indexing};
+//! use symbol_map::indexing::{HashIndexing,Indexing};
 //! use std::str::FromStr;
 //!
 //! let mut pos_index = HashIndexing::<String, usize>::default();
