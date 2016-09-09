@@ -185,6 +185,13 @@ impl<T, D> Table<T, D> where D: SymbolId {
         mem::swap(&mut remapped, self);
     }
 
+    pub fn into_iter(self) -> TableIntoIter<T, D> {
+        TableIntoIter {
+            remaining: self.len(),
+            item: self.head,
+        }
+    }
+
     /// Returns an iterator over table entries.
     pub fn iter<'s>(&'s self) -> TableIter<'s, T, D> {
         TableIter {
@@ -223,6 +230,24 @@ impl<T, D> Table<T, D> where T: Eq + Hash, D: SymbolId {
     }
 }
 
+impl<'a, T, D> IntoIterator for &'a Table<T, D> where T: 'a, D: 'a + SymbolId {
+    type Item = &'a Symbol<T, D>;
+    type IntoIter = TableIter<'a, T, D>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<T, D> IntoIterator for Table<T, D> where D: SymbolId {
+    type Item = Box<Symbol<T, D>>;
+    type IntoIter = TableIntoIter<T, D>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.into_iter()
+    }
+}
+
 /// Iterator over table contents.
 pub struct TableIter<'a, T, D> where T: 'a, D: 'a + SymbolId {
     remaining: usize,
@@ -240,6 +265,33 @@ impl<'a, T, D> Iterator for TableIter<'a, T, D> where T: 'a, D: 'a + SymbolId {
             Some(symbol) => {
                 self.remaining -= 1;
                 self.item = symbol.next.as_ref();
+                Some(symbol)
+            },
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.remaining, Some(self.remaining))
+    }
+}
+
+/// Iterator that consumes a table.
+pub struct TableIntoIter<T, D> where D: SymbolId {
+    remaining: usize,
+    item: Option<Box<Symbol<T, D>>>,
+}
+
+impl<T, D> Iterator for TableIntoIter<T, D> where D: SymbolId {
+    type Item = Box<Symbol<T, D>>;
+
+    fn next(&mut self) -> Option<Box<Symbol<T, D>>> {
+        let mut item = None;
+        mem::swap(&mut item, &mut self.item);
+        match item {
+            None => None,
+            Some(mut symbol) => {
+                self.remaining -= 1;
+                mem::swap(&mut self.item, &mut symbol.next);
                 Some(symbol)
             },
         }
@@ -431,5 +483,31 @@ mod test {
         }
         t.remap(|_| None);
         assert_eq!(t.len(), 0);
+    }
+
+    #[test]
+    fn table_empty_into_iter_ok() {
+        let t = Table::<usize, u8>::new();
+        assert!(t.into_iter().next().is_none());
+    }
+
+    #[test]
+    fn table_into_iter_ok() {
+        let mut t = Table::<usize, u32>::new();
+        for v in VALUES.iter() {
+            t.insert(*v);
+        }
+        assert_eq!(t.len(), VALUES.len());
+
+        let mut expected_len = t.len();
+        let mut i = t.into_iter();
+        let mut vs = VALUES.iter().rev();
+        assert_eq!(i.size_hint(), (expected_len, Some(expected_len)));
+        while let Some(symbol) = i.next() {
+            expected_len -= 1;
+            assert_eq!(i.size_hint(), (expected_len, Some(expected_len)));
+            assert_eq!(Some(symbol.data()), vs.next());
+        }
+        assert_eq!(i.size_hint(), (0, Some(0)));
     }
 }
