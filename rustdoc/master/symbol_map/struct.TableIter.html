@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="API documentation for the Rust `TableIter` struct in crate `symbol_table`.">
+    <meta name="description" content="API documentation for the Rust `TableIter` struct in crate `symbol_map`.">
     <meta name="keywords" content="rust, rustlang, rust-lang, TableIter">
 
-    <title>symbol_table::TableIter - Rust</title>
+    <title>symbol_map::TableIter - Rust</title>
 
     <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
@@ -28,7 +28,7 @@
 
     <nav class="sidebar">
         
-        <p class='location'><a href='index.html'>symbol_table</a></p><script>window.sidebarCurrent = {name: 'TableIter', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+        <p class='location'><a href='index.html'>symbol_map</a></p><script>window.sidebarCurrent = {name: 'TableIter', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
     </nav>
 
     <nav class="sub">
@@ -43,18 +43,18 @@
     </nav>
 
     <section id='main' class="content struct">
-<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>symbol_table</a>::<wbr><a class='struct' href=''>TableIter</a></span><span class='out-of-band'><span id='render-detail'>
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>symbol_map</a>::<wbr><a class='struct' href=''>TableIter</a></span><span class='out-of-band'><span id='render-detail'>
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-390' class='srclink' href='../src/symbol_table/src/table.rs.html#252-255' title='goto source code'>[src]</a></span></h1>
-<pre class='rust struct'>pub struct TableIter&lt;'a,&nbsp;T,&nbsp;D&gt; <span class='where'>where T: 'a, D: 'a + <a class='trait' href='../symbol_table/trait.SymbolId.html' title='symbol_table::SymbolId'>SymbolId</a></span> {
+               </span><a id='src-390' class='srclink' href='../src/symbol_map/src/table.rs.html#252-255' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct TableIter&lt;'a,&nbsp;T,&nbsp;D&gt; <span class='where'>where T: 'a, D: 'a + <a class='trait' href='../symbol_map/trait.SymbolId.html' title='symbol_map::SymbolId'>SymbolId</a></span> {
     // some fields omitted
 }</pre><div class='docblock'><p>Iterator over table contents.</p>
-</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a,&nbsp;T,&nbsp;D&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/iter/iterator/trait.Iterator.html' title='core::iter::iterator::Iterator'>Iterator</a> for <a class='struct' href='../symbol_table/struct.TableIter.html' title='symbol_table::TableIter'>TableIter</a>&lt;'a,&nbsp;T,&nbsp;D&gt; <span class='where'>where T: 'a, D: 'a + <a class='trait' href='../symbol_table/trait.SymbolId.html' title='symbol_table::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-396' class='srclink' href='../src/symbol_table/src/table.rs.html#257-276' title='goto source code'>[src]</a></span></h3>
-<div class='impl-items'><h4 id='associatedtype.Item' class='type'><span id='Item.t' class='invisible'><code>type <a href='https://doc.rust-lang.org/nightly/core/iter/iterator/trait.Iterator.html#associatedtype.Item' class='type'>Item</a> = &amp;'a <a class='struct' href='../symbol_table/struct.Symbol.html' title='symbol_table::Symbol'>Symbol</a>&lt;T,&nbsp;D&gt;</code></span></h4>
+</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a,&nbsp;T,&nbsp;D&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/iter/iterator/trait.Iterator.html' title='core::iter::iterator::Iterator'>Iterator</a> for <a class='struct' href='../symbol_map/struct.TableIter.html' title='symbol_map::TableIter'>TableIter</a>&lt;'a,&nbsp;T,&nbsp;D&gt; <span class='where'>where T: 'a, D: 'a + <a class='trait' href='../symbol_map/trait.SymbolId.html' title='symbol_map::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-396' class='srclink' href='../src/symbol_map/src/table.rs.html#257-276' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Item' class='type'><span id='Item.t' class='invisible'><code>type <a href='https://doc.rust-lang.org/nightly/core/iter/iterator/trait.Iterator.html#associatedtype.Item' class='type'>Item</a> = &amp;'a <a class='struct' href='../symbol_map/struct.Symbol.html' title='symbol_map::Symbol'>Symbol</a>&lt;T,&nbsp;D&gt;</code></span></h4>
 <div class='docblock'><p>The type of the elements being iterated over.</p>
-</div><h4 id='method.next' class='method'><span id='next.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/iter/iterator/trait.Iterator.html#tymethod.next' class='fnname'>next</a>(&amp;mut self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;'a <a class='struct' href='../symbol_table/struct.Symbol.html' title='symbol_table::Symbol'>Symbol</a>&lt;T,&nbsp;D&gt;&gt;</code></span></h4>
+</div><h4 id='method.next' class='method'><span id='next.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/iter/iterator/trait.Iterator.html#tymethod.next' class='fnname'>next</a>(&amp;mut self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;'a <a class='struct' href='../symbol_map/struct.Symbol.html' title='symbol_map::Symbol'>Symbol</a>&lt;T,&nbsp;D&gt;&gt;</code></span></h4>
 <div class='docblock'><p>Advances the iterator and returns the next value. <a href="https://doc.rust-lang.org/nightly/core/iter/iterator/trait.Iterator.html#tymethod.next">Read more</a></p>
 </div><h4 id='method.size_hint' class='method'><span id='size_hint.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/iter/iterator/trait.Iterator.html#method.size_hint' class='fnname'>size_hint</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>&gt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></span></h4>
 <div class='docblock'><p>Returns the bounds on the remaining length of the iterator. <a href="https://doc.rust-lang.org/nightly/core/iter/iterator/trait.Iterator.html#method.size_hint">Read more</a></p>
@@ -207,7 +207,7 @@
 
     <script>
         window.rootPath = "../";
-        window.currentCrate = "symbol_table";
+        window.currentCrate = "symbol_map";
         window.playgroundUrl = "";
     </script>
     <script src="../jquery.js"></script>

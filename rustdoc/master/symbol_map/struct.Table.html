@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="API documentation for the Rust `Table` struct in crate `symbol_table`.">
+    <meta name="description" content="API documentation for the Rust `Table` struct in crate `symbol_map`.">
     <meta name="keywords" content="rust, rustlang, rust-lang, Table">
 
-    <title>symbol_table::Table - Rust</title>
+    <title>symbol_map::Table - Rust</title>
 
     <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
@@ -28,7 +28,7 @@
 
     <nav class="sidebar">
         
-        <p class='location'><a href='index.html'>symbol_table</a></p><script>window.sidebarCurrent = {name: 'Table', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+        <p class='location'><a href='index.html'>symbol_map</a></p><script>window.sidebarCurrent = {name: 'Table', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
     </nav>
 
     <nav class="sub">
@@ -43,12 +43,12 @@
     </nav>
 
     <section id='main' class="content struct">
-<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>symbol_table</a>::<wbr><a class='struct' href=''>Table</a></span><span class='out-of-band'><span id='render-detail'>
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>symbol_map</a>::<wbr><a class='struct' href=''>Table</a></span><span class='out-of-band'><span id='render-detail'>
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-331' class='srclink' href='../src/symbol_table/src/table.rs.html#110-113' title='goto source code'>[src]</a></span></h1>
-<pre class='rust struct'>pub struct Table&lt;T,&nbsp;D&gt; <span class='where'>where D: <a class='trait' href='../symbol_table/trait.SymbolId.html' title='symbol_table::SymbolId'>SymbolId</a></span> {
+               </span><a id='src-331' class='srclink' href='../src/symbol_map/src/table.rs.html#110-113' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Table&lt;T,&nbsp;D&gt; <span class='where'>where D: <a class='trait' href='../symbol_map/trait.SymbolId.html' title='symbol_map::SymbolId'>SymbolId</a></span> {
     // some fields omitted
 }</pre><div class='docblock'><p>The head of a linked list associating <code>T</code>s with <code>SymbolId</code>s. <code>SymbolId</code>
 values start at 0 and increase by 1 for each <code>T</code> added to the table.</p>
@@ -61,18 +61,18 @@ dropped from the table</em>.</p>
 <p>As a result, a table index may retain a raw pointer to a <code>Symbol&lt;T&gt;</code> as long
 as care is taken not to dereference or otherwise make use of such pointers
 after the symbol they point to has been dropped by <code>retain()</code>.</p>
-</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;T,&nbsp;D&gt; <a class='struct' href='../symbol_table/struct.Table.html' title='symbol_table::Table'>Table</a>&lt;T,&nbsp;D&gt; <span class='where'>where D: <a class='trait' href='../symbol_table/trait.SymbolId.html' title='symbol_table::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-336' class='srclink' href='../src/symbol_table/src/table.rs.html#115-209' title='goto source code'>[src]</a></span></h3>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;T,&nbsp;D&gt; <a class='struct' href='../symbol_map/struct.Table.html' title='symbol_map::Table'>Table</a>&lt;T,&nbsp;D&gt; <span class='where'>where D: <a class='trait' href='../symbol_map/trait.SymbolId.html' title='symbol_map::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-336' class='srclink' href='../src/symbol_map/src/table.rs.html#115-209' title='goto source code'>[src]</a></span></h3>
 <div class='impl-items'><h4 id='method.new' class='method'><span id='new.v' class='invisible'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; Self</code></span></h4>
 <div class='docblock'><p>Creates a new, empty table.</p>
 </div><h4 id='method.len' class='method'><span id='len.v' class='invisible'><code>fn <a href='#method.len' class='fnname'>len</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></span></h4>
 <div class='docblock'><p>Returns the number of symbols in the table.</p>
-</div><h4 id='method.insert' class='method'><span id='insert.v' class='invisible'><code>fn <a href='#method.insert' class='fnname'>insert</a>(&amp;mut self, value: T) -&gt; &amp;<a class='struct' href='../symbol_table/struct.Symbol.html' title='symbol_table::Symbol'>Symbol</a>&lt;T,&nbsp;D&gt;</code></span></h4>
+</div><h4 id='method.insert' class='method'><span id='insert.v' class='invisible'><code>fn <a href='#method.insert' class='fnname'>insert</a>(&amp;mut self, value: T) -&gt; &amp;<a class='struct' href='../symbol_map/struct.Symbol.html' title='symbol_map::Symbol'>Symbol</a>&lt;T,&nbsp;D&gt;</code></span></h4>
 <div class='docblock'><p>Inserts <code>value</code> into the table and assigns it an id. The same value may
 be inserted more than once. To prevent such operations, use the
 <code>get_or_insert()</code> method of <code>Indexing</code>.</p>
 
 <p>Returns a reference to the newly created symbol.</p>
-</div><h4 id='method.remap' class='method'><span id='remap.v' class='invisible'><code>fn <a href='#method.remap' class='fnname'>remap</a>&lt;F&gt;(&amp;mut self, f: F) <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnMut.html' title='core::ops::FnMut'>FnMut</a>(&amp;<a class='struct' href='../symbol_table/struct.Symbol.html' title='symbol_table::Symbol'>Symbol</a>&lt;T,&nbsp;D&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;D&gt;</span></code></span></h4>
+</div><h4 id='method.remap' class='method'><span id='remap.v' class='invisible'><code>fn <a href='#method.remap' class='fnname'>remap</a>&lt;F&gt;(&amp;mut self, f: F) <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnMut.html' title='core::ops::FnMut'>FnMut</a>(&amp;<a class='struct' href='../symbol_map/struct.Symbol.html' title='symbol_map::Symbol'>Symbol</a>&lt;T,&nbsp;D&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;D&gt;</span></code></span></h4>
 <div class='docblock'><p>Remaps associations between <code>T</code>s and <code>D</code>s, selectively dropping some
 associations entirely. The addresses of <code>Symbol&lt;T&gt;</code>s for entries which
 are retained do not change.</p>
@@ -88,25 +88,25 @@ to use <code>d</code>.</p>
 <li><p>The final mapping should be a dense range of whole numbers starting at 0.</p></li>
 <li><p>No two different <code>T</code>s are associated with the same <code>D</code>.</p></li>
 </ul>
-</div><h4 id='method.into_iter' class='method'><span id='into_iter.v' class='invisible'><code>fn <a href='#method.into_iter' class='fnname'>into_iter</a>(self) -&gt; <a class='struct' href='../symbol_table/struct.TableIntoIter.html' title='symbol_table::TableIntoIter'>TableIntoIter</a>&lt;T,&nbsp;D&gt;</code></span></h4>
-<h4 id='method.iter' class='method'><span id='iter.v' class='invisible'><code>fn <a href='#method.iter' class='fnname'>iter</a>&lt;'s&gt;(&amp;'s self) -&gt; <a class='struct' href='../symbol_table/struct.TableIter.html' title='symbol_table::TableIter'>TableIter</a>&lt;'s,&nbsp;T,&nbsp;D&gt;</code></span></h4>
+</div><h4 id='method.into_iter' class='method'><span id='into_iter.v' class='invisible'><code>fn <a href='#method.into_iter' class='fnname'>into_iter</a>(self) -&gt; <a class='struct' href='../symbol_map/struct.TableIntoIter.html' title='symbol_map::TableIntoIter'>TableIntoIter</a>&lt;T,&nbsp;D&gt;</code></span></h4>
+<h4 id='method.iter' class='method'><span id='iter.v' class='invisible'><code>fn <a href='#method.iter' class='fnname'>iter</a>&lt;'s&gt;(&amp;'s self) -&gt; <a class='struct' href='../symbol_map/struct.TableIter.html' title='symbol_map::TableIter'>TableIter</a>&lt;'s,&nbsp;T,&nbsp;D&gt;</code></span></h4>
 <div class='docblock'><p>Returns an iterator over table entries.</p>
-</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;T,&nbsp;D&gt; <a class='struct' href='../symbol_table/struct.Table.html' title='symbol_table::Table'>Table</a>&lt;T,&nbsp;D&gt; <span class='where'>where T: <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a>, D: <a class='trait' href='../symbol_table/trait.SymbolId.html' title='symbol_table::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-365' class='srclink' href='../src/symbol_table/src/table.rs.html#211-231' title='goto source code'>[src]</a></span></h3>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;T,&nbsp;D&gt; <a class='struct' href='../symbol_map/struct.Table.html' title='symbol_map::Table'>Table</a>&lt;T,&nbsp;D&gt; <span class='where'>where T: <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a>, D: <a class='trait' href='../symbol_map/trait.SymbolId.html' title='symbol_map::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-365' class='srclink' href='../src/symbol_map/src/table.rs.html#211-231' title='goto source code'>[src]</a></span></h3>
 <div class='impl-items'><h4 id='method.to_hash_map' class='method'><span id='to_hash_map.v' class='invisible'><code>fn <a href='#method.to_hash_map' class='fnname'>to_hash_map</a>(self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html' title='std::collections::hash::map::HashMap'>HashMap</a>&lt;T,&nbsp;D&gt;</code></span></h4>
 <div class='docblock'><p>Converts <code>self</code> to a <code>HashMap</code> holding the same associations as
 <code>self</code>. If the same key occurs in <code>self</code> more than once, then duplicate
 occurrences will be dropped arbitrarily.</p>
-</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a,&nbsp;T,&nbsp;D&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html' title='core::iter::traits::IntoIterator'>IntoIterator</a> for &amp;'a <a class='struct' href='../symbol_table/struct.Table.html' title='symbol_table::Table'>Table</a>&lt;T,&nbsp;D&gt; <span class='where'>where T: 'a, D: 'a + <a class='trait' href='../symbol_table/trait.SymbolId.html' title='symbol_table::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-375' class='srclink' href='../src/symbol_table/src/table.rs.html#233-240' title='goto source code'>[src]</a></span></h3>
-<div class='impl-items'><h4 id='associatedtype.Item' class='type'><span id='Item.t' class='invisible'><code>type <a href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html#associatedtype.Item' class='type'>Item</a> = &amp;'a <a class='struct' href='../symbol_table/struct.Symbol.html' title='symbol_table::Symbol'>Symbol</a>&lt;T,&nbsp;D&gt;</code></span></h4>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a,&nbsp;T,&nbsp;D&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html' title='core::iter::traits::IntoIterator'>IntoIterator</a> for &amp;'a <a class='struct' href='../symbol_map/struct.Table.html' title='symbol_map::Table'>Table</a>&lt;T,&nbsp;D&gt; <span class='where'>where T: 'a, D: 'a + <a class='trait' href='../symbol_map/trait.SymbolId.html' title='symbol_map::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-375' class='srclink' href='../src/symbol_map/src/table.rs.html#233-240' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Item' class='type'><span id='Item.t' class='invisible'><code>type <a href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html#associatedtype.Item' class='type'>Item</a> = &amp;'a <a class='struct' href='../symbol_map/struct.Symbol.html' title='symbol_map::Symbol'>Symbol</a>&lt;T,&nbsp;D&gt;</code></span></h4>
 <div class='docblock'><p>The type of the elements being iterated over.</p>
-</div><h4 id='associatedtype.IntoIter' class='type'><span id='IntoIter.t' class='invisible'><code>type <a href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html#associatedtype.IntoIter' class='type'>IntoIter</a> = <a class='struct' href='../symbol_table/struct.TableIter.html' title='symbol_table::TableIter'>TableIter</a>&lt;'a,&nbsp;T,&nbsp;D&gt;</code></span></h4>
+</div><h4 id='associatedtype.IntoIter' class='type'><span id='IntoIter.t' class='invisible'><code>type <a href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html#associatedtype.IntoIter' class='type'>IntoIter</a> = <a class='struct' href='../symbol_map/struct.TableIter.html' title='symbol_map::TableIter'>TableIter</a>&lt;'a,&nbsp;T,&nbsp;D&gt;</code></span></h4>
 <div class='docblock'><p>Which kind of iterator are we turning this into?</p>
 </div><h4 id='method.into_iter-1' class='method'><span id='into_iter.v-1' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html#tymethod.into_iter' class='fnname'>into_iter</a>(self) -&gt; Self::IntoIter</code></span></h4>
 <div class='docblock'><p>Creates an iterator from a value. <a href="https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html#tymethod.into_iter">Read more</a></p>
-</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;T,&nbsp;D&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html' title='core::iter::traits::IntoIterator'>IntoIterator</a> for <a class='struct' href='../symbol_table/struct.Table.html' title='symbol_table::Table'>Table</a>&lt;T,&nbsp;D&gt; <span class='where'>where D: <a class='trait' href='../symbol_table/trait.SymbolId.html' title='symbol_table::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-383' class='srclink' href='../src/symbol_table/src/table.rs.html#242-249' title='goto source code'>[src]</a></span></h3>
-<div class='impl-items'><h4 id='associatedtype.Item-1' class='type'><span id='Item.t-1' class='invisible'><code>type <a href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html#associatedtype.Item' class='type'>Item</a> = <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='struct' href='../symbol_table/struct.Symbol.html' title='symbol_table::Symbol'>Symbol</a>&lt;T,&nbsp;D&gt;&gt;</code></span></h4>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;T,&nbsp;D&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html' title='core::iter::traits::IntoIterator'>IntoIterator</a> for <a class='struct' href='../symbol_map/struct.Table.html' title='symbol_map::Table'>Table</a>&lt;T,&nbsp;D&gt; <span class='where'>where D: <a class='trait' href='../symbol_map/trait.SymbolId.html' title='symbol_map::SymbolId'>SymbolId</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-383' class='srclink' href='../src/symbol_map/src/table.rs.html#242-249' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Item-1' class='type'><span id='Item.t-1' class='invisible'><code>type <a href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html#associatedtype.Item' class='type'>Item</a> = <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='struct' href='../symbol_map/struct.Symbol.html' title='symbol_map::Symbol'>Symbol</a>&lt;T,&nbsp;D&gt;&gt;</code></span></h4>
 <div class='docblock'><p>The type of the elements being iterated over.</p>
-</div><h4 id='associatedtype.IntoIter-1' class='type'><span id='IntoIter.t-1' class='invisible'><code>type <a href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html#associatedtype.IntoIter' class='type'>IntoIter</a> = <a class='struct' href='../symbol_table/struct.TableIntoIter.html' title='symbol_table::TableIntoIter'>TableIntoIter</a>&lt;T,&nbsp;D&gt;</code></span></h4>
+</div><h4 id='associatedtype.IntoIter-1' class='type'><span id='IntoIter.t-1' class='invisible'><code>type <a href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html#associatedtype.IntoIter' class='type'>IntoIter</a> = <a class='struct' href='../symbol_map/struct.TableIntoIter.html' title='symbol_map::TableIntoIter'>TableIntoIter</a>&lt;T,&nbsp;D&gt;</code></span></h4>
 <div class='docblock'><p>Which kind of iterator are we turning this into?</p>
 </div><h4 id='method.into_iter-2' class='method'><span id='into_iter.v-2' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html#tymethod.into_iter' class='fnname'>into_iter</a>(self) -&gt; Self::IntoIter</code></span></h4>
 <div class='docblock'><p>Creates an iterator from a value. <a href="https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html#tymethod.into_iter">Read more</a></p>
@@ -165,7 +165,7 @@ occurrences will be dropped arbitrarily.</p>
 
     <script>
         window.rootPath = "../";
-        window.currentCrate = "symbol_table";
+        window.currentCrate = "symbol_map";
         window.playgroundUrl = "";
     </script>
     <script src="../jquery.js"></script>
