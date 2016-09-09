@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Insertion` enum in crate `symbol_map`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Insertion">
+
+    <title>symbol_map::indexing::Insertion - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>symbol_map</a>::<wbr><a href='index.html'>indexing</a></p><script>window.sidebarCurrent = {name: 'Insertion', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>symbol_map</a>::<wbr><a href='index.html'>indexing</a>::<wbr><a class='enum' href=''>Insertion</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-11' class='srclink' href='../../src/symbol_map/src/indexing.rs.html#22-28' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum Insertion&lt;T&gt; {
+    Present(T),
+    New(T),
+}</pre><div class='docblock'><p>Indicates whether the result of a symbol lookup had to create a new table
+entry.</p>
+</div><h2 class='variants'>Variants</h2>
+<span id='variant.Present' class='variant'><span id='Present.v' class='invisible'><code>Present(T)</code></span></span><div class='docblock'><p>Result came from an item that was already present in table.</p>
+</div><span id='variant.New' class='variant'><span id='New.v' class='invisible'><code>New(T)</code></span></span><div class='docblock'><p>Result came from an item that was not present in table, and a new entry
+was created.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;T&gt; <a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-119' class='srclink' href='../../src/symbol_map/src/indexing.rs.html#30-70' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.map' class='method'><span id='map.v' class='invisible'><code>fn <a href='#method.map' class='fnname'>map</a>&lt;F,&nbsp;X&gt;(&amp;self, f: F) -&gt; <a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;X&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;T) -&gt; X</span></code></span></h4>
+<div class='docblock'><p>Maps over the type returned by an <code>Insertion</code> to produce a new value
+that may be of a different type.</p>
+
+<h1 id='example' class='section-header'><a href='#example'>Example</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>symbol_map</span>::<span class='ident'>indexing</span>::{<span class='ident'>HashIndexing</span>, <span class='ident'>Indexing</span>, <span class='ident'>Insertion</span>};
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>str</span>::<span class='ident'>FromStr</span>;
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>index</span> <span class='op'>=</span> <span class='ident'>HashIndexing</span>::<span class='op'>&lt;</span><span class='ident'>String</span>, <span class='ident'>usize</span><span class='op'>&gt;</span>::<span class='ident'>default</span>();
+<span class='kw'>let</span> <span class='ident'>s1</span> <span class='op'>=</span> <span class='ident'>String</span>::<span class='ident'>from_str</span>(<span class='string'>&quot;value1&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>s2</span> <span class='op'>=</span> <span class='ident'>String</span>::<span class='ident'>from_str</span>(<span class='string'>&quot;value1&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>s3</span> <span class='op'>=</span> <span class='ident'>String</span>::<span class='ident'>from_str</span>(<span class='string'>&quot;value2&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='comment'>// get_or_insert normally returns an Insertion that borrows the</span>
+<span class='comment'>// structure on which it was invoked. We map the symbol reference</span>
+<span class='comment'>// returned after each insertion to a copy of the ID that was mapped to.</span>
+<span class='kw'>let</span> <span class='ident'>id1</span>: <span class='ident'>Insertion</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>index</span>.<span class='ident'>get_or_insert</span>(<span class='ident'>s1</span>).<span class='ident'>map</span>(<span class='op'>|</span><span class='ident'>symbol</span><span class='op'>|</span> <span class='op'>*</span><span class='ident'>symbol</span>.<span class='ident'>id</span>());
+<span class='kw'>let</span> <span class='ident'>id2</span>: <span class='ident'>Insertion</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>index</span>.<span class='ident'>get_or_insert</span>(<span class='ident'>s2</span>).<span class='ident'>map</span>(<span class='op'>|</span><span class='ident'>symbol</span><span class='op'>|</span> <span class='op'>*</span><span class='ident'>symbol</span>.<span class='ident'>id</span>());
+<span class='kw'>let</span> <span class='ident'>id3</span>: <span class='ident'>Insertion</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>index</span>.<span class='ident'>get_or_insert</span>(<span class='ident'>s3</span>).<span class='ident'>map</span>(<span class='op'>|</span><span class='ident'>symbol</span><span class='op'>|</span> <span class='op'>*</span><span class='ident'>symbol</span>.<span class='ident'>id</span>());
+<span class='comment'>// The Insertion values are not the same because one was an insertion and</span>
+<span class='comment'>// the other a retrieval.</span>
+<span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>id1</span> <span class='op'>!=</span> <span class='ident'>id2</span>);
+<span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>id1</span> <span class='op'>!=</span> <span class='ident'>id3</span>);
+<span class='comment'>// But the symbol IDs for identical values are the same.</span>
+<span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>id1</span>.<span class='ident'>unwrap</span>() <span class='op'>==</span> <span class='ident'>id2</span>.<span class='ident'>unwrap</span>());</pre>
+</div><h4 id='method.unwrap' class='method'><span id='unwrap.v' class='invisible'><code>fn <a href='#method.unwrap' class='fnname'>unwrap</a>(self) -&gt; T</code></span></h4>
+<div class='docblock'><p>Unwraps an <code>Insertion</code> to produce the value which it wraps.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;T:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a>&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-17' class='srclink' href='../../src/symbol_map/src/indexing.rs.html#21' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><span id='clone.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;</code></span></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><span id='clone_from.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></span></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;T:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a>&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> for <a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-23' class='srclink' href='../../src/symbol_map/src/indexing.rs.html#21' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'></div><h3 class='impl'><span class='in-band'><code>impl&lt;T:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a>&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a> for <a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-29' class='srclink' href='../../src/symbol_map/src/indexing.rs.html#21' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.cmp' class='method'><span id='cmp.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#tymethod.cmp' class='fnname'>cmp</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html' title='core::cmp::Ordering'>Ordering</a></code></span></h4>
+<div class='docblock'><p>This method returns an <code>Ordering</code> between <code>self</code> and <code>other</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#tymethod.cmp">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;T:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a>&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a> for <a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-42' class='srclink' href='../../src/symbol_map/src/indexing.rs.html#21' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.hash' class='method'><span id='hash.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#tymethod.hash' class='fnname'>hash</a>&lt;__HT:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html' title='core::hash::Hasher'>Hasher</a>&gt;(&amp;self, __arg_0: &amp;mut __HT)</code></span></h4>
+<div class='docblock'><p>Feeds this value into the state given, updating the hasher as necessary.</p>
+</div><h4 id='method.hash_slice' class='method'><span id='hash_slice.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#method.hash_slice' class='fnname'>hash_slice</a>&lt;H&gt;(data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[Self]</a>, state: &amp;mut H) <span class='where'>where H: <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html' title='core::hash::Hasher'>Hasher</a></span></code><div class='since' title='Stable since Rust version 1.3.0'>1.3.0</div></span></h4>
+<div class='docblock'><p>Feeds a slice of this type into the state provided.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;T:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a>&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-50' class='srclink' href='../../src/symbol_map/src/indexing.rs.html#21' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.eq' class='method'><span id='eq.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></span></h4>
+<div class='docblock'><p>This method tests for <code>self</code> and <code>other</code> values to be equal, and is used by <code>==</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq">Read more</a></p>
+</div><h4 id='method.ne' class='method'><span id='ne.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></span></h4>
+<div class='docblock'><p>This method tests for <code>!=</code>.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;T:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a>&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> for <a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-70' class='srclink' href='../../src/symbol_map/src/indexing.rs.html#21' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.partial_cmp' class='method'><span id='partial_cmp.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#tymethod.partial_cmp' class='fnname'>partial_cmp</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='enum' href='https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html' title='core::cmp::Ordering'>Ordering</a>&gt;</code></span></h4>
+<div class='docblock'><p>This method returns an ordering between <code>self</code> and <code>other</code> values if one exists. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#tymethod.partial_cmp">Read more</a></p>
+</div><h4 id='method.lt' class='method'><span id='lt.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.lt' class='fnname'>lt</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></span></h4>
+<div class='docblock'><p>This method tests less than (for <code>self</code> and <code>other</code>) and is used by the <code>&lt;</code> operator. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.lt">Read more</a></p>
+</div><h4 id='method.le' class='method'><span id='le.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.le' class='fnname'>le</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></span></h4>
+<div class='docblock'><p>This method tests less than or equal to (for <code>self</code> and <code>other</code>) and is used by the <code>&lt;=</code> operator. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.le">Read more</a></p>
+</div><h4 id='method.gt' class='method'><span id='gt.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.gt' class='fnname'>gt</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></span></h4>
+<div class='docblock'><p>This method tests greater than (for <code>self</code> and <code>other</code>) and is used by the <code>&gt;</code> operator. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.gt">Read more</a></p>
+</div><h4 id='method.ge' class='method'><span id='ge.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.ge' class='fnname'>ge</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../symbol_map/indexing/enum.Insertion.html' title='symbol_map::indexing::Insertion'>Insertion</a>&lt;T&gt;) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></span></h4>
+<div class='docblock'><p>This method tests greater than or equal to (for <code>self</code> and <code>other</code>) and is used by the <code>&gt;=</code> operator. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.ge">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "symbol_map";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>
