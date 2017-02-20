@@ -277,8 +277,9 @@ mod test {
     use super::{HashIndexing, Indexing, Insertion, Ref};
     use ::{SymbolId, Table};
 
+    use std::collections::hash_map::DefaultHasher;
     use std::cmp::Ordering;
-    use std::hash::{Hash, Hasher, SipHasher};
+    use std::hash::{Hash, Hasher};
     use std::str::FromStr;
 
     const VALUES: &'static [usize] = &[101, 203, 500, 30, 0, 1];
@@ -307,10 +308,10 @@ mod test {
         assert_eq!(r1.cmp(&r4), Ordering::Less);
 
         // Hash.
-        let mut rh1 = SipHasher::new();
-        let mut rh2 = SipHasher::new();
-        let mut rh3 = SipHasher::new();
-        let mut rh4 = SipHasher::new();
+        let mut rh1 = DefaultHasher::new();
+        let mut rh2 = DefaultHasher::new();
+        let mut rh3 = DefaultHasher::new();
+        let mut rh4 = DefaultHasher::new();
         r1.hash(&mut rh1);
         r2.hash(&mut rh2);
         r3.hash(&mut rh3);
@@ -320,10 +321,10 @@ mod test {
         let rh3 = rh3.finish();
         let rh4 = rh4.finish();
 
-        let mut xh1 = SipHasher::new();
-        let mut xh2 = SipHasher::new();
-        let mut xh3 = SipHasher::new();
-        let mut xh4 = SipHasher::new();
+        let mut xh1 = DefaultHasher::new();
+        let mut xh2 = DefaultHasher::new();
+        let mut xh3 = DefaultHasher::new();
+        let mut xh4 = DefaultHasher::new();
         x1.hash(&mut xh1);
         x2.hash(&mut xh2);
         x3.hash(&mut xh3);
