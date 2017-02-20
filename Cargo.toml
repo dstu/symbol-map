@@ -6,7 +6,7 @@ authors = ["Stu Black <trurl@freeshell.org>"]
 description = "Memory-efficient mapping from values to integer identifiers (AKA a lexicon or symbol table), with options for fast bidirectional lookup"
 documentation = "http://dstu.github.io/symbol-map/"
 repository = "https://github.com/dstu/symbol-map"
-readme = "README.org"
+readme = "README.md"
 license = "Apache-2.0"
 
 [dev-dependencies]
