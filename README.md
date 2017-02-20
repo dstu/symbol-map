@@ -1,9 +1,9 @@
-* Overview
+# Overview
 
-This crate provides the means for associating values of an arbitrary type ~T~
-with values of another arbitrary type ~S~ ("symbols"). Typical use cases involve
-values of ~T~ that are less convenient to deal with than values of ~S~, in which
-the identity of a ~T~ is important but its value is not. For example, the first
+This crate provides the means for associating values of an arbitrary type `T`
+with values of another arbitrary type `S` ("symbols"). Typical use cases involve
+values of `T` that are less convenient to deal with than values of `S`, in which
+the identity of a `T` is important but its value is not. For example, the first
 step in many natural language handling pipelines is construct a mapping from
 token strings to a dense range of integers starting at 0, so that they may be
 compared very quickly and used to index simple data structures like vectors and
@@ -11,28 +11,28 @@ arrays.
 
 You can get a lot of this package's functionality with a structure like:
 
-#+BEGIN_SRC rust
+```
 pub struct Table<T> where T: Hash + Eq {
     // Mapping from T to usize.
     by_symbol: HashMap<T, usize>,
     // Mapping from usize to T.
     by_id: Vec<T>,
 }
-#+END_SRC
+```
 
-But then you're maintaining two copies of each ~T~. You can resort to a
-~HashMap<Rc<T>, usize>~ and ~Vec<Rc<T>>~, but that forces you to pay the cost of
-reference counting and isn't easily shared across threads. Using ~Arc~ instead
-of ~Rc~ makes your type ~Send~-able, but that has even more overhead than using
-~Rc~.
+But then you're maintaining two copies of each `T`. You can resort to a
+`HashMap<Rc<T>, usize>` and `Vec<Rc<T>>`, but that forces you to pay the cost of
+reference counting and isn't easily shared across threads. Using `Arc` instead
+of `Rc` makes your type `Send`-able, but that has even more overhead than using
+`Rc`.
 
-Or you could use ~symbol_table::HashIndexing<Data=T, SymbolId=usize>~ and get a
-type that is ~Send~ and ~Sync~ when ~T~ is and owns only one ~T~ per association
+Or you could use `symbol_table::HashIndexing<Data=T, SymbolId=usize>` and get a
+type that is `Send` and `Sync` when `T` is and owns only one `T` per association
 in the table.
 
 See the [[http://dstu.github.io/symbol-map/index.html][rustdoc]] for example usage and further technical details.
 
-* Copyright
+# Copyright
 
 Copyright 2016, Donald S. Black.
 
