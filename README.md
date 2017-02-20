@@ -11,7 +11,7 @@ arrays.
 
 You can get a lot of this package's functionality with a structure like:
 
-```
+```rust
 pub struct Table<T> where T: Hash + Eq {
     // Mapping from T to usize.
     by_symbol: HashMap<T, usize>,
@@ -30,7 +30,8 @@ Or you could use `symbol_table::HashIndexing<Data=T, SymbolId=usize>` and get a
 type that is `Send` and `Sync` when `T` is and owns only one `T` per association
 in the table.
 
-See the [[http://dstu.github.io/symbol-map/index.html][rustdoc]] for example usage and further technical details.
+See the [rustdoc](http://dstu.github.io/symbol-map/index.html) for example usage
+and further technical details.
 
 # Copyright
 
