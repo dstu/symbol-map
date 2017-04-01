@@ -202,6 +202,7 @@ pub trait Indexing: Default {
 }
 
 /// HashMap-backed table indexing.
+#[derive(Debug)]
 pub struct HashIndexing<T, D> where T: Eq + Hash, D: SymbolId {
     table: Table<T, D>,
     by_symbol: HashMap<Ref<T>, Ref<Symbol<T, D>>>,
