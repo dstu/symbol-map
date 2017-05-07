@@ -11,6 +11,7 @@ use std::mem;
 /// Types `T` should not be mutated by any means once they are associated with a
 /// `SymbolId` and stored in a `Table`. Doing so may invalidate any caching or
 /// indexing that is done on top of the table.
+#[derive(Debug)]
 pub struct Symbol<T, D> where D: SymbolId {
     id: D,
     data: T,
@@ -107,6 +108,7 @@ impl SymbolId for u64 {
 /// As a result, a table index may retain a raw pointer to a `Symbol<T>` as long
 /// as care is taken not to dereference or otherwise make use of such pointers
 /// after the symbol they point to has been dropped by `retain()`.
+#[derive(Debug)]
 pub struct Table<T, D> where D: SymbolId {
     head: Option<Box<Symbol<T, D>>>,
     next_id: D,
@@ -249,6 +251,7 @@ impl<T, D> IntoIterator for Table<T, D> where D: SymbolId {
 }
 
 /// Iterator over table contents.
+#[derive(Debug)]
 pub struct TableIter<'a, T, D> where T: 'a, D: 'a + SymbolId {
     remaining: usize,
     item: Option<&'a Box<Symbol<T, D>>>,
@@ -276,6 +279,7 @@ impl<'a, T, D> Iterator for TableIter<'a, T, D> where T: 'a, D: 'a + SymbolId {
 }
 
 /// Iterator that consumes a table.
+#[derive(Debug)]
 pub struct TableIntoIter<T, D> where D: SymbolId {
     remaining: usize,
     item: Option<Box<Symbol<T, D>>>,
