@@ -1,6 +1,6 @@
 [package]
 name = "symbol-map"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["Stu Black <trurl@freeshell.org>"]
 
 description = "Memory-efficient mapping from values to integer identifiers (AKA a lexicon or symbol table), with options for fast bidirectional lookup"

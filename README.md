@@ -30,7 +30,7 @@ Or you could use `symbol_table::HashIndexing<Data=T, SymbolId=usize>` and get a
 type that is `Send` and `Sync` when `T` is and owns only one `T` per association
 in the table.
 
-See the [rustdoc](http://dstu.github.io/symbol-map/index.html) for example usage
+See the [rustdoc](https://docs.rs/symbol-map/1.0.2/symbol_map/) for example usage
 and further technical details.
 
 # Copyright
